@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface WizardProps {
   detected: string | null
@@ -17,8 +17,47 @@ export function FirstRunWizard({
   onPick,
   onDismiss,
 }: WizardProps): React.JSX.Element {
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    const focusables = (): HTMLElement[] =>
+      Array.from(dialog.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href]'))
+        .filter((element) => !element.hasAttribute('disabled'))
+    focusables()[0]?.focus()
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        event.stopPropagation()
+        onDismiss()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const items = focusables()
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (!first || !last) return
+      const active = document.activeElement
+      if (event.shiftKey && (!active || !dialog.contains(active))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    dialog.addEventListener('keydown', onKeyDown)
+    return () => dialog.removeEventListener('keydown', onKeyDown)
+  }, [onDismiss])
+
   return (
-    <div className="wizard-backdrop" role="dialog" aria-modal="true" aria-label="Locate Hermes">
+    <div
+      className="wizard-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Locate Hermes"
+      ref={dialogRef}
+    >
       <div className="wizard">
         <h1>Locate your Hermes install</h1>
         <p className="wizard-copy">
@@ -65,6 +104,7 @@ export function useHermesWizard(): {
   detected: string | null
   busy: boolean
   error: string | null
+  open: () => void
   useDetected: () => void
   pick: () => void
   dismiss: () => void
@@ -77,6 +117,7 @@ export function useHermesWizard(): {
   const open = async (): Promise<void> => {
     const found = await window.hermes?.detectHermesHome?.()
     setDetected(found)
+    setError(null)
     setShow(true)
   }
 
@@ -105,13 +146,24 @@ export function useHermesWizard(): {
     }
   }
 
+  const pick = async (): Promise<void> => {
+    try {
+      const home = await window.hermes?.pickHermesHome?.()
+      if (!home) return // dialog cancelled: not an error
+      await apply(home)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    }
+  }
+
   return {
     show,
     detected,
     busy,
     error,
+    open: () => void open(),
     useDetected: () => void apply(detected),
-    pick: () => void window.hermes?.pickHermesHome?.().then((home) => apply(home)),
+    pick: () => void pick(),
     dismiss: () => setShow(false),
   }
 }

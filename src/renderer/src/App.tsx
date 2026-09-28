@@ -11,7 +11,9 @@ import { UpdatesPage } from './features/updates/UpdatesPage'
 import { BackupsPage } from './features/backups/BackupsPage'
 import { ToolsPage } from './features/tools/ToolsPage'
 import { useBridgeHealth } from './hooks/use-bridge-health'
+import { useBridgeStatus } from './hooks/use-bridge-status'
 import { useSourceStatus } from './hooks/use-source-status'
+import { isConfigDirty, setConfigDirty } from './lib/unsaved-guard'
 
 const NAVIGATION = [
   { id: 'overview', label: 'Overview', ready: true },
@@ -28,8 +30,17 @@ const NAVIGATION = [
 export function App(): React.JSX.Element {
   const { health, error, live, uptimeS, refresh } = useBridgeHealth()
   const { sources } = useSourceStatus()
+  const bridge = useBridgeStatus()
   const wizard = useHermesWizard()
   const [page, setPage] = useState<string>('overview')
+
+  const navigate = (id: string): void => {
+    if (page === 'config' && id !== 'config' && isConfigDirty()) {
+      if (!window.confirm('Discard unsaved configuration changes?')) return
+      setConfigDirty(false)
+    }
+    setPage(id)
+  }
 
   const renderPage = (): React.JSX.Element => {
     switch (page) {
@@ -77,7 +88,7 @@ export function App(): React.JSX.Element {
               className={`nav-item${page === item.id ? ' nav-item-active' : ''}${item.ready ? '' : ' nav-item-pending'}`}
               aria-current={page === item.id ? 'page' : undefined}
               data-testid={`nav-${item.id}`}
-              onClick={() => item.ready && setPage(item.id)}
+              onClick={() => item.ready && navigate(item.id)}
               disabled={!item.ready}
             >
               {item.label}
@@ -90,6 +101,29 @@ export function App(): React.JSX.Element {
       </aside>
 
       <div className="content">
+        {bridge.status === 'failed' && !wizard.show ? (
+          <div className="banner banner-error" role="alert" data-testid="bridge-banner">
+            <span className="banner-text">
+              Bridge disconnected{bridge.lastError ? `: ${bridge.lastError}` : ''}
+            </span>
+            <button
+              type="button"
+              className="button"
+              data-testid="bridge-retry"
+              onClick={bridge.retry}
+            >
+              Retry connection
+            </button>
+            <button
+              type="button"
+              className="button"
+              data-testid="bridge-locate"
+              onClick={wizard.open}
+            >
+              Locate Hermes
+            </button>
+          </div>
+        ) : null}
         {renderPage()}
         <StatusRibbon health={health} live={live} error={error} />
       </div>

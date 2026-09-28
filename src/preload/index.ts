@@ -1,11 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { BridgeInfo } from '../shared/protocol'
+import type { BridgeInfo, BridgeStateDto } from '../shared/protocol'
 
-export interface BridgeStateDto {
-  status: 'stopped' | 'starting' | 'ready' | 'failed'
-  info: BridgeInfo | null
-  lastError: string | null
-}
+export type { BridgeStateDto } from '../shared/protocol'
 
 export interface SettingsDto {
   hermesHome?: string

@@ -43,6 +43,13 @@ export interface BridgeInfo {
   pid: number
 }
 
+export interface BridgeStateDto {
+  status: 'stopped' | 'starting' | 'ready' | 'failed'
+  info: BridgeInfo | null
+  lastError: string | null
+  health: HealthReport | null
+}
+
 export type StreamEvent =
   | { type: 'heartbeat'; at: string; uptime_s: number }
   | { type: 'layers'; layers: Record<SourceLayer, LayerStatus> }

@@ -24,6 +24,7 @@ export function ChatPage(): React.JSX.Element {
   const abortRef = useRef<AbortController | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const liveTextRef = useRef<string | null>(null)
+  const transcriptReqRef = useRef(0)
 
   useEffect(() => {
     liveTextRef.current = liveText
@@ -104,6 +105,10 @@ export function ChatPage(): React.JSX.Element {
   const send = async (): Promise<void> => {
     const text = draft.trim()
     if (!text || busy) return
+    // Kill any lingering stream from a previous stop so its late events can
+    // never bleed into this turn's transcript.
+    abortRef.current?.abort()
+    transcriptReqRef.current += 1
     setDraft('')
     setError(null)
     setBusy(true)
@@ -124,10 +129,14 @@ export function ChatPage(): React.JSX.Element {
         setEntries((current) => [...current, { kind: 'notice', text: message }])
       }
     } finally {
-      setBusy(false)
-      setLiveText(null)
-      abortRef.current = null
-      chatIdRef.current = newChatId()
+      // Only the still-current turn may reset shared state; a newer send may
+      // already own busy/liveText/abortRef.
+      if (abortRef.current === controller) {
+        setBusy(false)
+        setLiveText(null)
+        abortRef.current = null
+        chatIdRef.current = newChatId()
+      }
     }
   }
 
@@ -141,6 +150,7 @@ export function ChatPage(): React.JSX.Element {
 
   const reset = (): void => {
     if (busy) return
+    transcriptReqRef.current += 1
     setEntries([])
     setSessionId(null)
     setError(null)
@@ -148,11 +158,13 @@ export function ChatPage(): React.JSX.Element {
 
   const pickSession = async (id: string): Promise<void> => {
     if (busy) return
+    const request = ++transcriptReqRef.current
     setSessionId(id)
     setEntries([])
     setError(null)
     try {
       const page = await bridgeApi.sessionMessages(id, 200, 'latest')
+      if (request !== transcriptReqRef.current) return // superseded by a newer send/pick
       const restored: Entry[] = page.messages
         .filter(
           (message) =>
@@ -166,6 +178,7 @@ export function ChatPage(): React.JSX.Element {
         )
       setEntries(restored)
     } catch (cause) {
+      if (request !== transcriptReqRef.current) return
       setError(cause instanceof Error ? cause.message : String(cause))
     }
   }

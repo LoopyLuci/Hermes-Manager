@@ -23,7 +23,9 @@ export function LogsPage(): React.JSX.Element {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
   const offsetRef = useRef(0)
+  const loadReqRef = useRef(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const disconnectRef = useRef<(() => void) | null>(null)
 
@@ -35,14 +37,19 @@ export function LogsPage(): React.JSX.Element {
   }, [])
 
   const load = useCallback(async (target: string) => {
+    const request = ++loadReqRef.current
     setError(null)
     setStatus(null)
+    setLoadedFor(null)
     try {
       const batch = await bridgeApi.logTail(target, 400)
+      if (request !== loadReqRef.current) return // a newer file/reload won the race
       offsetRef.current = batch.offset
       setEntries(batch.entries)
       setStatus(`${batch.entries.length} lines`)
+      setLoadedFor(target)
     } catch (cause) {
+      if (request !== loadReqRef.current) return
       setError(cause instanceof Error ? cause.message : String(cause))
     }
   }, [])
@@ -55,7 +62,9 @@ export function LogsPage(): React.JSX.Element {
   useEffect(() => {
     disconnectRef.current?.()
     disconnectRef.current = null
-    if (!follow) return
+    // Connect only once the tail for this exact file has landed; otherwise the
+    // socket would start from the previous file's offset.
+    if (!follow || loadedFor !== file) return
     const stop = bridgeApi.followLog(file, offsetRef.current, (batch) => {
       if (batch.rotated) {
         setEntries([])
@@ -74,7 +83,7 @@ export function LogsPage(): React.JSX.Element {
       stop()
       disconnectRef.current = null
     }
-  }, [follow, file])
+  }, [follow, file, loadedFor])
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase()

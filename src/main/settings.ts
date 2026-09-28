@@ -66,6 +66,10 @@ export async function pickHermesHome(): Promise<string | null> {
   })
   const chosen = filePaths[0]
   if (canceled || !chosen) return null
-  if (!existsSync(join(chosen, 'hermes-agent'))) return null
+  if (!existsSync(join(chosen, 'hermes-agent'))) {
+    // Cancelling returns null; picking a non-Hermes folder is an error the
+    // wizard should surface, never the same signal as "backed out".
+    throw new Error('That folder does not contain a hermes-agent checkout.')
+  }
   return chosen
 }

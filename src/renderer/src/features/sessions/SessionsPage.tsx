@@ -29,17 +29,20 @@ export function SessionsPage(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [source, setSource] = useState<string>('—')
   const aliveRef = useRef(true)
+  const sessionsReqRef = useRef(0)
+  const messagesReqRef = useRef(0)
 
   const loadSessions = useCallback(async (q?: string) => {
+    const request = ++sessionsReqRef.current
     try {
       const page = await bridgeApi.sessions(q, 100)
-      if (!aliveRef.current) return
+      if (!aliveRef.current || request !== sessionsReqRef.current) return
       setSessions(page.sessions)
       setTotal(page.total)
       setSource(page.source)
       setError(page.detail)
     } catch (cause) {
-      if (!aliveRef.current) return
+      if (!aliveRef.current || request !== sessionsReqRef.current) return
       setError(cause instanceof Error ? cause.message : String(cause))
     }
   }, [])
@@ -58,13 +61,15 @@ export function SessionsPage(): React.JSX.Element {
   }, [query, loadSessions])
 
   const openSession = async (id: string): Promise<void> => {
+    const request = ++messagesReqRef.current
     setSelected(id)
     setMessages([])
     try {
       const page = await bridgeApi.sessionMessages(id, 300)
-      if (aliveRef.current) setMessages(page.messages)
+      if (aliveRef.current && request === messagesReqRef.current) setMessages(page.messages)
     } catch (cause) {
-      if (aliveRef.current) setError(cause instanceof Error ? cause.message : String(cause))
+      if (aliveRef.current && request === messagesReqRef.current)
+        setError(cause instanceof Error ? cause.message : String(cause))
     }
   }
 

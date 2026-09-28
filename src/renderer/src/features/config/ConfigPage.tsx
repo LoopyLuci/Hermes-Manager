@@ -9,6 +9,7 @@ import type {
   EnvReport,
 } from '@shared/protocol'
 import { bridgeApi } from '../../lib/bridge-api'
+import { setConfigDirty } from '../../lib/unsaved-guard'
 
 function getPath(config: Record<string, unknown>, path: string): unknown {
   let current: unknown = config
@@ -74,6 +75,7 @@ export function ConfigPage(): React.JSX.Element {
   const [envDeletes, setEnvDeletes] = useState<Set<string>>(new Set())
   const [diff, setDiff] = useState<ConfigDiff | null>(null)
   const [pendingBody, setPendingBody] = useState<ConfigEditRequest | null>(null)
+  const [reviewedCount, setReviewedCount] = useState<number | null>(null)
   const [result, setResult] = useState<ConfigApplyResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -157,6 +159,23 @@ export function ConfigPage(): React.JSX.Element {
     deletes.size +
     Object.keys(envDrafts).filter((key) => envDrafts[key] !== '').length +
     envDeletes.size
+
+  useEffect(() => {
+    setConfigDirty(changeCount > 0)
+  }, [changeCount])
+
+  // Edits made after "Review" would be silently skipped by Apply (it sends the
+  // reviewed snapshot); invalidate so the user must re-review.
+  useEffect(() => {
+    if (diff && reviewedCount !== null && changeCount !== reviewedCount) {
+      setDiff(null)
+      setPendingBody(null)
+      setReviewedCount(null)
+      setError('Edits changed after review — review again before applying.')
+    }
+  }, [changeCount, diff, reviewedCount])
+
+  useEffect(() => () => setConfigDirty(false), [])
 
   const setDraft = (path: string, text: string): void => {
     const initial = doc ? displayValue(getPath(doc.config, path)) : ''
@@ -256,6 +275,7 @@ export function ConfigPage(): React.JSX.Element {
       const preview: ConfigDiff = await bridgeApi.configDiff(body)
       if (!aliveRef.current) return
       setPendingBody(body)
+      setReviewedCount(changeCount)
       setDiff(preview)
     } catch (cause) {
       if (!aliveRef.current) return
@@ -291,6 +311,19 @@ export function ConfigPage(): React.JSX.Element {
   const cancelDiff = (): void => {
     setDiff(null)
     setPendingBody(null)
+    setReviewedCount(null)
+  }
+
+  const reloadWithGuard = (): void => {
+    if (changeCount > 0 && !window.confirm('Discard your unsaved edits and reload?')) return
+    setDrafts({})
+    setEnvDrafts({})
+    setDeletes(new Set())
+    setEnvDeletes(new Set())
+    setDiff(null)
+    setPendingBody(null)
+    setReviewedCount(null)
+    void reload()
   }
 
   const submitAdd = (): void => {
@@ -413,7 +446,13 @@ export function ConfigPage(): React.JSX.Element {
           >
             Review changes
           </button>
-          <button type="button" className="button" disabled={busy} onClick={() => void reload()}>
+          <button
+            type="button"
+            className="button"
+            data-testid="config-reload"
+            disabled={busy}
+            onClick={reloadWithGuard}
+          >
             Reload
           </button>
         </div>

@@ -16,19 +16,25 @@ export function useSourceStatus(): SourceStatusState {
 
   useEffect(() => {
     let cancelled = false
-    bridgeApi
-      .sources()
-      .then((status) => {
-        if (cancelled) return
-        setSources(status)
-        setError(null)
-      })
-      .catch((cause: unknown) => {
-        if (cancelled) return
-        setError(cause instanceof Error ? cause.message : String(cause))
-      })
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const load = (): void => {
+      bridgeApi
+        .sources()
+        .then((status) => {
+          if (cancelled) return
+          setSources(status)
+          setError(null)
+        })
+        .catch((cause: unknown) => {
+          if (cancelled) return
+          setError(cause instanceof Error ? cause.message : String(cause))
+          timer = setTimeout(load, 5000)
+        })
+    }
+    load()
     return () => {
       cancelled = true
+      if (timer) clearTimeout(timer)
     }
   }, [nonce])
 
