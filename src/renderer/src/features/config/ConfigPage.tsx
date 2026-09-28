@@ -315,6 +315,9 @@ export function ConfigPage(): React.JSX.Element {
     const isDeleted = deletes.has(path)
     const text = drafts[path] ?? initial
     const isSet = doc ? getPath(doc.config, path) !== undefined : false
+    // What Hermes uses when the key is not set: shown as a hint, never as if it were the value.
+    const fallback = doc?.defaults ? displayValue(getPath(doc.defaults, path)) : ''
+    const hint = fallback ? `default: ${fallback}` : 'not set'
     const parsed = path in drafts ? parseDraft(type, text) : { ok: true as const, value: undefined }
 
     return (
@@ -334,6 +337,7 @@ export function ConfigPage(): React.JSX.Element {
             value={text}
             onChange={(event) => setDraft(path, event.target.value)}
           >
+            {!isSet ? <option value="">{`(${hint})`}</option> : null}
             <option value="true">true</option>
             <option value="false">false</option>
           </select>
@@ -342,6 +346,7 @@ export function ConfigPage(): React.JSX.Element {
             className="field-input mono"
             rows={2}
             data-testid={`field-${path}`}
+            placeholder={isSet ? undefined : hint}
             value={text}
             onChange={(event) => setDraft(path, event.target.value)}
           />
@@ -349,6 +354,7 @@ export function ConfigPage(): React.JSX.Element {
           <input
             className="field-input"
             data-testid={`field-${path}`}
+            placeholder={isSet ? undefined : hint}
             value={text}
             onChange={(event) => setDraft(path, event.target.value)}
           />

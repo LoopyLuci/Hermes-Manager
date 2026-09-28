@@ -54,6 +54,8 @@ def build(app: FastAPI) -> list[dict]:
             required: list[str] = []
             where: dict[str, str] = {}
             for p in op.get("parameters") or []:
+                if p.get("in") in ("header", "cookie"):
+                    continue            # the bearer token and friends: the caller's transport, not an argument
                 name = p["name"]
                 props[name] = _resolve(p.get("schema") or {}, components)
                 if p.get("description"):
