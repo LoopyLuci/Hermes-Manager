@@ -90,7 +90,7 @@ export function LogsPage(): React.JSX.Element {
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 26,
     overscan: 12,
-    initialRect: { width: 1200, height: 800 }
+    initialRect: { width: 1200, height: 800 },
   })
 
   const toggleLevel = (level: Level): void => {
@@ -108,11 +108,16 @@ export function LogsPage(): React.JSX.Element {
         <div>
           <h1>Log explorer</h1>
           <p className="subtitle">
-            {files.length} log files · {status ?? 'loading'} {error ? <span className="ribbon-error">{error}</span> : null}
+            {files.length} log files · {status ?? 'loading'}{' '}
+            {error ? <span className="ribbon-error">{error}</span> : null}
           </p>
         </div>
         <div className="toolbar">
-          <button type="button" className={`button${follow ? ' button-primary' : ''}`} onClick={() => setFollow((value) => !value)}>
+          <button
+            type="button"
+            className={`button${follow ? ' button-primary' : ''}`}
+            onClick={() => setFollow((value) => !value)}
+          >
             {follow ? 'Following…' : 'Follow'}
           </button>
           <button type="button" className="button" onClick={() => void load(file)}>
@@ -161,7 +166,11 @@ export function LogsPage(): React.JSX.Element {
                 </button>
               ))}
               {activeLevels.size > 0 ? (
-                <button type="button" className="chip chip-clear" onClick={() => setActiveLevels(new Set())}>
+                <button
+                  type="button"
+                  className="chip chip-clear"
+                  onClick={() => setActiveLevels(new Set())}
+                >
                   clear
                 </button>
               ) : null}
@@ -189,7 +198,7 @@ export function LogsPage(): React.JSX.Element {
                         left: 0,
                         width: '100%',
                         height: `${row.size}px`,
-                        transform: `translateY(${row.start}px)`
+                        transform: `translateY(${row.start}px)`,
                       }}
                     >
                       <span className="log-ts">{entry.ts ?? ''}</span>

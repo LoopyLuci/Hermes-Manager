@@ -5,7 +5,7 @@ import type {
   GatewayStatus,
   LifecycleAction,
   LifecycleResult,
-  ProcessReport
+  ProcessReport,
 } from '@shared/protocol'
 import { bridgeApi } from '../../lib/bridge-api'
 
@@ -31,7 +31,7 @@ export function GatewayPage(): React.JSX.Element {
       const [nextStatus, nextFleet, nextProcesses] = await Promise.all([
         bridgeApi.gatewayStatus(),
         bridgeApi.gatewayFleet(),
-        bridgeApi.processes()
+        bridgeApi.processes(),
       ])
       if (!aliveRef.current) return
       setStatus(nextStatus)
@@ -59,7 +59,11 @@ export function GatewayPage(): React.JSX.Element {
     setNote(null)
     try {
       const result: LifecycleResult = await bridgeApi.gatewayLifecycle(action)
-      setNote(result.ok ? `hermes gateway ${action} spawned (pid ${result.pid ?? '?'})` : (result.detail ?? 'failed'))
+      setNote(
+        result.ok
+          ? `hermes gateway ${action} spawned (pid ${result.pid ?? '?'})`
+          : (result.detail ?? 'failed'),
+      )
       await refresh()
     } catch (cause) {
       setNote(cause instanceof Error ? cause.message : String(cause))
@@ -74,7 +78,13 @@ export function GatewayPage(): React.JSX.Element {
     setNote(null)
     try {
       const result: DrainResult = await bridgeApi.gatewayDrain(action)
-      setNote(result.ok ? (result.drain_requested ? 'drain requested' : 'drain cancelled') : (result.detail ?? 'failed'))
+      setNote(
+        result.ok
+          ? result.drain_requested
+            ? 'drain requested'
+            : 'drain cancelled'
+          : (result.detail ?? 'failed'),
+      )
       await refresh()
     } catch (cause) {
       setNote(cause instanceof Error ? cause.message : String(cause))
@@ -95,10 +105,20 @@ export function GatewayPage(): React.JSX.Element {
 
   const running = status?.running ?? false
   const drained = status?.drain_requested ?? false
-  const stateLabel = status ? ((status.state?.state as string | null) ?? (running ? 'running' : 'stopped')) : '…'
-  const stateClass = drained ? 'state-pill state-draining' : running ? 'state-pill state-running' : 'state-pill state-stopped'
+  const stateLabel = status
+    ? ((status.state?.state as string | null) ?? (running ? 'running' : 'stopped'))
+    : '…'
+  const stateClass = drained
+    ? 'state-pill state-draining'
+    : running
+      ? 'state-pill state-running'
+      : 'state-pill state-stopped'
 
-  const actionButton = (action: LifecycleAction, label: string, enabled: boolean): React.JSX.Element => (
+  const actionButton = (
+    action: LifecycleAction,
+    label: string,
+    enabled: boolean,
+  ): React.JSX.Element => (
     <button
       key={action}
       type="button"
@@ -123,8 +143,11 @@ export function GatewayPage(): React.JSX.Element {
                   {stateLabel}
                 </span>{' '}
                 pid {status.state?.pid ?? '—'}
-                {status.identity?.supervisor ? ` · supervisor ${status.identity.supervisor}` : ''} · source{' '}
-                <span className={`badge badge-${status.source === 'deep' ? 'ready' : 'degraded'}`}>{status.source}</span>
+                {status.identity?.supervisor ? ` · supervisor ${status.identity.supervisor}` : ''} ·
+                source{' '}
+                <span className={`badge badge-${status.source === 'deep' ? 'ready' : 'degraded'}`}>
+                  {status.source}
+                </span>
               </>
             ) : (
               'Contacting bridge…'
@@ -180,13 +203,19 @@ export function GatewayPage(): React.JSX.Element {
         </div>
         <div className="card">
           <span className="card-label">Code</span>
-          <span className="card-value">{status?.state?.code_version ?? status?.identity?.code_version ?? '—'}</span>
-          <span className="card-note">sha {shortSha(status?.state?.code_sha ?? status?.identity?.code_sha ?? null)}</span>
+          <span className="card-value">
+            {status?.state?.code_version ?? status?.identity?.code_version ?? '—'}
+          </span>
+          <span className="card-note">
+            sha {shortSha(status?.state?.code_sha ?? status?.identity?.code_sha ?? null)}
+          </span>
         </div>
         <div className="card">
           <span className="card-label">Served profiles</span>
           <span className="card-value">{(status?.state?.served_profiles ?? []).length || '—'}</span>
-          <span className="card-note">{(status?.state?.served_profiles ?? []).join(', ') || 'none reported'}</span>
+          <span className="card-note">
+            {(status?.state?.served_profiles ?? []).join(', ') || 'none reported'}
+          </span>
         </div>
         <div className="card">
           <span className="card-label">State file</span>
@@ -221,7 +250,9 @@ export function GatewayPage(): React.JSX.Element {
                 <td>{row.profile}</td>
                 <td className="mono">{row.pid ?? '—'}</td>
                 <td>
-                  <span className={`chip chip-${row.state === 'current' ? 'info' : 'debug'}`}>{row.state}</span>
+                  <span className={`chip chip-${row.state === 'current' ? 'info' : 'debug'}`}>
+                    {row.state}
+                  </span>
                 </td>
                 <td className="mono">{row.code_version ?? '—'}</td>
                 <td className="mono">{shortSha(row.code_sha)}</td>
@@ -244,13 +275,17 @@ export function GatewayPage(): React.JSX.Element {
         <div className="panel-head">
           <h2>Processes</h2>
           <span className="panel-note">
-            {processes ? `${processes.processes.length} tracked · source ${processes.source}` : 'loading'}
+            {processes
+              ? `${processes.processes.length} tracked · source ${processes.source}`
+              : 'loading'}
           </span>
         </div>
         <ul className="process-list" data-testid="process-list">
           {(processes?.processes ?? []).map((item, index) => (
             <li className="process-row" key={`${item.kind}-${item.name}-${index}`}>
-              <span className={`chip chip-${item.kind === 'gateway' ? 'info' : 'debug'}`}>{item.kind}</span>
+              <span className={`chip chip-${item.kind === 'gateway' ? 'info' : 'debug'}`}>
+                {item.kind}
+              </span>
               <span className="process-name">{item.name}</span>
               <span className="mono process-pid">{item.pid ?? '—'}</span>
               <span className="process-status">{item.status}</span>

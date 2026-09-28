@@ -20,7 +20,8 @@ const api = {
   restartBridge: (): Promise<BridgeInfo | null> => ipcRenderer.invoke('hermes:restart-bridge'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),
   readSettings: (): Promise<SettingsDto> => ipcRenderer.invoke('hermes:read-settings'),
-  writeSettings: (patch: Partial<SettingsDto>): Promise<SettingsDto> => ipcRenderer.invoke('hermes:write-settings', patch),
+  writeSettings: (patch: Partial<SettingsDto>): Promise<SettingsDto> =>
+    ipcRenderer.invoke('hermes:write-settings', patch),
   detectHermesHome: (): Promise<string | null> => ipcRenderer.invoke('hermes:detect'),
   pickHermesHome: (): Promise<string | null> => ipcRenderer.invoke('hermes:pick'),
   onBridgeLog: (listener: (line: string) => void): (() => void) => {
@@ -32,7 +33,7 @@ const api = {
     const handler = (): void => listener()
     ipcRenderer.on('bridge:hermes-home-missing', handler)
     return () => ipcRenderer.off('bridge:hermes-home-missing', handler)
-  }
+  },
 }
 
 export type HermesApi = typeof api

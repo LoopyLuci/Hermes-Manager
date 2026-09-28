@@ -6,7 +6,7 @@ import type {
   ConfigDocument,
   ConfigEditRequest,
   EnvChange,
-  EnvReport
+  EnvReport,
 } from '@shared/protocol'
 import { bridgeApi } from '../../lib/bridge-api'
 
@@ -113,7 +113,7 @@ export function ConfigPage(): React.JSX.Element {
       if (current && typeof current === 'object') return 'object'
       return 'string'
     },
-    [doc]
+    [doc],
   )
 
   const fields = useMemo(() => {
@@ -147,7 +147,7 @@ export function ConfigPage(): React.JSX.Element {
         is_set: false,
         is_secret: SECRET_PATTERN.test(key),
         category: null,
-        description: null
+        description: null,
       }))
     return [...visible, ...draftOnly]
   }, [env, search, envDrafts])
@@ -356,7 +356,12 @@ export function ConfigPage(): React.JSX.Element {
         <div className="field-actions">
           {!parsed.ok ? <span className="field-error">{parsed.error}</span> : null}
           {isSet ? (
-            <button type="button" className="button button-ghost" data-testid={`remove-${path}`} onClick={() => toggleDelete(path)}>
+            <button
+              type="button"
+              className="button button-ghost"
+              data-testid={`remove-${path}`}
+              onClick={() => toggleDelete(path)}
+            >
               {isDeleted ? 'Undo' : 'Remove'}
             </button>
           ) : null}
@@ -373,9 +378,16 @@ export function ConfigPage(): React.JSX.Element {
           <p className="subtitle">
             {doc ? (
               <>
-                <span className={`badge badge-${doc.source === 'deep' ? 'ready' : 'degraded'}`}>{doc.source}</span>{' '}
+                <span className={`badge badge-${doc.source === 'deep' ? 'ready' : 'degraded'}`}>
+                  {doc.source}
+                </span>{' '}
                 <span className="mono">{doc.path || 'config.yaml'}</span>
-                {env ? <> · <span className="mono">{env.path || '.env'}</span></> : null}
+                {env ? (
+                  <>
+                    {' '}
+                    · <span className="mono">{env.path || '.env'}</span>
+                  </>
+                ) : null}
               </>
             ) : (
               'Loading configuration…'
@@ -454,14 +466,24 @@ export function ConfigPage(): React.JSX.Element {
         <div className="panel diff-panel" data-testid="diff-panel">
           <div className="panel-head">
             <h2>Review changes</h2>
-            <span className="panel-note">{diff.changes.length} change(s) — nothing written yet</span>
+            <span className="panel-note">
+              {diff.changes.length} change(s) — nothing written yet
+            </span>
           </div>
           <ul className="diff-list">
             {diff.changes.map((change) => (
-              <li className="diff-row" key={`${change.kind}:${change.path}:${change.action}`} data-testid="diff-row">
-                <span className={`chip chip-${change.kind === 'env' ? 'info' : 'debug'}`}>{change.kind}</span>
+              <li
+                className="diff-row"
+                key={`${change.kind}:${change.path}:${change.action}`}
+                data-testid="diff-row"
+              >
+                <span className={`chip chip-${change.kind === 'env' ? 'info' : 'debug'}`}>
+                  {change.kind}
+                </span>
                 <span className="mono diff-path">{change.path}</span>
-                <span className={`chip chip-${change.action === 'delete' ? 'warn' : 'ok'}`}>{change.action}</span>
+                <span className={`chip chip-${change.action === 'delete' ? 'warn' : 'ok'}`}>
+                  {change.action}
+                </span>
                 <span className="diff-current mono">{change.current ?? '—'}</span>
                 <span className="diff-arrow">→</span>
                 <span className="diff-next mono">{change.next ?? '—'}</span>
@@ -478,7 +500,13 @@ export function ConfigPage(): React.JSX.Element {
             >
               {busy ? 'Applying…' : 'Apply changes'}
             </button>
-            <button type="button" className="button" data-testid="cancel-diff" disabled={busy} onClick={cancelDiff}>
+            <button
+              type="button"
+              className="button"
+              data-testid="cancel-diff"
+              disabled={busy}
+              onClick={cancelDiff}
+            >
               Cancel
             </button>
           </div>
@@ -494,16 +522,22 @@ export function ConfigPage(): React.JSX.Element {
                 <h2>{category}</h2>
                 <span className="panel-note">{categoryFields.length} key(s)</span>
               </div>
-              <div className="field-grid">{categoryFields.map((field) => renderField(field.path, field.type))}</div>
+              <div className="field-grid">
+                {categoryFields.map((field) => renderField(field.path, field.type))}
+              </div>
             </div>
           ))}
-          {grouped.length === 0 && doc ? <div className="panel panel-muted">No keys match the filter.</div> : null}
+          {grouped.length === 0 && doc ? (
+            <div className="panel panel-muted">No keys match the filter.</div>
+          ) : null}
         </div>
       ) : (
         <div className="panel" data-testid="env-form">
           <div className="panel-head">
             <h2>Environment</h2>
-            <span className="panel-note">{env ? `${env.rows.length} variable(s) · source ${env.source}` : 'loading'}</span>
+            <span className="panel-note">
+              {env ? `${env.rows.length} variable(s) · source ${env.source}` : 'loading'}
+            </span>
           </div>
           <table className="table">
             <thead>
@@ -518,12 +552,17 @@ export function ConfigPage(): React.JSX.Element {
               {envRows.map((row) => {
                 const isDeleted = envDeletes.has(row.key)
                 const text = envDrafts[row.key] ?? (row.is_secret ? '' : (row.value ?? ''))
-                const parsed = row.key in envDrafts ? parseDraft('string', text) : { ok: true as const, value: undefined }
+                const parsed =
+                  row.key in envDrafts
+                    ? parseDraft('string', text)
+                    : { ok: true as const, value: undefined }
                 return (
                   <tr key={row.key} data-key={row.key} className={isDeleted ? 'field-deleted' : ''}>
                     <td className="mono" data-testid={`env-key-${row.key}`}>
                       {row.key}
-                      {row.category ? <span className="chip chip-debug">{row.category}</span> : null}
+                      {row.category ? (
+                        <span className="chip chip-debug">{row.category}</span>
+                      ) : null}
                     </td>
                     <td>
                       {isDeleted ? (
@@ -548,7 +587,9 @@ export function ConfigPage(): React.JSX.Element {
                       )}
                     </td>
                     <td>
-                      <span className={`chip chip-${row.is_set ? 'ok' : 'debug'}`}>{row.is_set ? 'set' : 'unset'}</span>
+                      <span className={`chip chip-${row.is_set ? 'ok' : 'debug'}`}>
+                        {row.is_set ? 'set' : 'unset'}
+                      </span>
                       {!parsed.ok ? <span className="field-error">{parsed.error}</span> : null}
                     </td>
                     <td>
@@ -582,7 +623,12 @@ export function ConfigPage(): React.JSX.Element {
               value={addValue}
               onChange={(event) => setAddValue(event.target.value)}
             />
-            <button type="button" className="button" data-testid="env-add-submit" onClick={submitAdd}>
+            <button
+              type="button"
+              className="button"
+              data-testid="env-add-submit"
+              onClick={submitAdd}
+            >
               Add variable
             </button>
           </div>

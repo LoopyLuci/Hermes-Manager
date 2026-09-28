@@ -5,7 +5,7 @@ const LAYER_LABELS: Record<SourceLayer, string> = {
   files: 'Log & state files',
   db: 'state.db',
   cli: 'hermes CLI',
-  deep: 'In-process imports'
+  deep: 'In-process imports',
 }
 
 const LAYER_ORDER: SourceLayer[] = ['rest', 'files', 'db', 'cli', 'deep']
@@ -15,7 +15,11 @@ function formatLatency(latency: number | null): string {
   return `${latency.toFixed(0)} ms`
 }
 
-export function LayerMatrix({ layers }: { layers: Record<SourceLayer, LayerStatus> }): React.JSX.Element {
+export function LayerMatrix({
+  layers,
+}: {
+  layers: Record<SourceLayer, LayerStatus>
+}): React.JSX.Element {
   return (
     <table className="matrix" data-testid="layer-matrix">
       <thead>

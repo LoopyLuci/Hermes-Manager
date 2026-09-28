@@ -4,7 +4,7 @@ import type {
   LocalModelsReport,
   McpReport,
   PluginReport,
-  SkillList
+  SkillList,
 } from '@shared/protocol'
 import { bridgeApi } from '../../lib/bridge-api'
 
@@ -15,7 +15,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'skills', label: 'Skills' },
   { id: 'cron', label: 'Cron' },
   { id: 'plugins', label: 'Plugins' },
-  { id: 'models', label: 'Local models' }
+  { id: 'models', label: 'Local models' },
 ]
 
 function formatSize(bytes: number | null): string {
@@ -87,7 +87,7 @@ export function ToolsPage(): React.JSX.Element {
         if (aliveRef.current) setLoading(null)
       }
     },
-    []
+    [],
   )
 
   useEffect(() => {
@@ -111,7 +111,9 @@ export function ToolsPage(): React.JSX.Element {
       const result = await bridgeApi.mcpTest(name)
       if (!aliveRef.current) return
       if (result.ok) {
-        setNote(`test spawned (pid ${result.pid ?? '?'}) — tail ${result.log ?? 'manager-mcp-test.log'}`)
+        setNote(
+          `test spawned (pid ${result.pid ?? '?'}) — tail ${result.log ?? 'manager-mcp-test.log'}`,
+        )
       } else {
         setError(result.detail ?? 'mcp test failed to start')
       }
@@ -135,7 +137,7 @@ export function ToolsPage(): React.JSX.Element {
     try {
       const result = await bridgeApi.configApply({
         config: [{ path: `mcp_servers.${name}.enabled`, value: enabled }],
-        env: []
+        env: [],
       })
       if (!aliveRef.current) return
       if (result.ok) {
@@ -170,7 +172,9 @@ export function ToolsPage(): React.JSX.Element {
       const result = await bridgeApi.skillsToggle(name, enable)
       if (!aliveRef.current) return
       if (result.ok) {
-        setNote(`skill ${name} ${enable ? 'enabled' : 'disabled'} — skills.disabled now has ${result.disabled.length} entr${result.disabled.length === 1 ? 'y' : 'ies'}`)
+        setNote(
+          `skill ${name} ${enable ? 'enabled' : 'disabled'} — skills.disabled now has ${result.disabled.length} entr${result.disabled.length === 1 ? 'y' : 'ies'}`,
+        )
         await load('skills', { query: skillQuery, offset: skillOffset })
       } else {
         setError(result.detail ?? 'skill toggle failed')
@@ -184,7 +188,7 @@ export function ToolsPage(): React.JSX.Element {
 
   const runCronAction = async (
     jobId: string,
-    action: 'pause' | 'resume' | 'run'
+    action: 'pause' | 'resume' | 'run',
   ): Promise<void> => {
     if (action === 'run') {
       const key = `cron:${jobId}`
@@ -201,7 +205,9 @@ export function ToolsPage(): React.JSX.Element {
       const result = await bridgeApi.cronAction(jobId, action)
       if (!aliveRef.current) return
       if (result.ok) {
-        setNote(`${action} ${jobId} spawned (pid ${result.pid ?? '?'}) — tail ${result.log ?? 'manager-cron.log'}`)
+        setNote(
+          `${action} ${jobId} spawned (pid ${result.pid ?? '?'}) — tail ${result.log ?? 'manager-cron.log'}`,
+        )
         await load('cron')
       } else {
         setError(result.detail ?? `cron ${action} failed`)
@@ -225,7 +231,10 @@ export function ToolsPage(): React.JSX.Element {
   ) : null
 
   const renderMcp = (): React.JSX.Element => {
-    if (!mcp) return <p className="panel-note">{loading === 'mcp' ? 'Contacting bridge…' : 'No data yet.'}</p>
+    if (!mcp)
+      return (
+        <p className="panel-note">{loading === 'mcp' ? 'Contacting bridge…' : 'No data yet.'}</p>
+      )
     return (
       <>
         <div className="panel">
@@ -306,7 +315,8 @@ export function ToolsPage(): React.JSX.Element {
           </table>
         </div>
         <p className="panel-note">
-          Test runs <span className="mono">hermes mcp test &lt;name&gt;</span>; enable/disable writes
+          Test runs <span className="mono">hermes mcp test &lt;name&gt;</span>; enable/disable
+          writes
           <span className="mono"> mcp_servers.&lt;name&gt;.enabled</span> through the config editor
           (a backup is taken on every apply).
         </p>
@@ -315,7 +325,10 @@ export function ToolsPage(): React.JSX.Element {
   }
 
   const renderSkills = (): React.JSX.Element => {
-    if (!skills) return <p className="panel-note">{loading === 'skills' ? 'Scanning skills…' : 'No data yet.'}</p>
+    if (!skills)
+      return (
+        <p className="panel-note">{loading === 'skills' ? 'Scanning skills…' : 'No data yet.'}</p>
+      )
     const hasNext = skills.offset + skills.skills.length < skills.total
     return (
       <>
@@ -413,8 +426,8 @@ export function ToolsPage(): React.JSX.Element {
           </div>
         </div>
         <p className="panel-note">
-          Toggling rewrites <span className="mono">skills.disabled</span> in config.yaml (backup kept
-          under <span className="mono">backups/config/</span>). SKILL.md is read only for the
+          Toggling rewrites <span className="mono">skills.disabled</span> in config.yaml (backup
+          kept under <span className="mono">backups/config/</span>). SKILL.md is read only for the
           visible page — large skill libraries stay fast.
         </p>
       </>
@@ -422,7 +435,10 @@ export function ToolsPage(): React.JSX.Element {
   }
 
   const renderCron = (): React.JSX.Element => {
-    if (!cron) return <p className="panel-note">{loading === 'cron' ? 'Contacting bridge…' : 'No data yet.'}</p>
+    if (!cron)
+      return (
+        <p className="panel-note">{loading === 'cron' ? 'Contacting bridge…' : 'No data yet.'}</p>
+      )
     return (
       <>
         <div className="panel">
@@ -464,7 +480,9 @@ export function ToolsPage(): React.JSX.Element {
                     </span>
                   </td>
                   <td className="mono">
-                    {job.last_status ? `${job.last_status} · ${job.last_run_at ?? ''}` : job.last_run_at ?? '—'}
+                    {job.last_status
+                      ? `${job.last_status} · ${job.last_run_at ?? ''}`
+                      : (job.last_run_at ?? '—')}
                   </td>
                   <td className="mono">{job.next_run_at ?? '—'}</td>
                   <td className="table-actions">
@@ -509,15 +527,20 @@ export function ToolsPage(): React.JSX.Element {
           </table>
         </div>
         <p className="panel-note">
-          Actions run <span className="mono">hermes cron &lt;pause|resume|run&gt; &lt;job&gt;</span> —
-          paused jobs are restored on gateway restart (config-driven pause does not persist).
+          Actions run <span className="mono">hermes cron &lt;pause|resume|run&gt; &lt;job&gt;</span>{' '}
+          — paused jobs are restored on gateway restart (config-driven pause does not persist).
         </p>
       </>
     )
   }
 
   const renderPlugins = (): React.JSX.Element => {
-    if (!plugins) return <p className="panel-note">{loading === 'plugins' ? 'Contacting bridge…' : 'No data yet.'}</p>
+    if (!plugins)
+      return (
+        <p className="panel-note">
+          {loading === 'plugins' ? 'Contacting bridge…' : 'No data yet.'}
+        </p>
+      )
     return (
       <>
         <div className="cards">
@@ -533,7 +556,9 @@ export function ToolsPage(): React.JSX.Element {
           </div>
           <div className="card">
             <span className="card-label">Enabled</span>
-            <span className="card-value">{plugins.plugins.filter((entry) => entry.enabled).length}</span>
+            <span className="card-value">
+              {plugins.plugins.filter((entry) => entry.enabled).length}
+            </span>
             <span className="card-note">not listed in plugins.disabled</span>
           </div>
         </div>
@@ -583,7 +608,8 @@ export function ToolsPage(): React.JSX.Element {
         </div>
         <p className="panel-note">
           Bundled plugins are on unless listed in <span className="mono">plugins.disabled</span>;
-          user plugins under <span className="mono">HERMES_HOME/plugins</span> are off unless listed in
+          user plugins under <span className="mono">HERMES_HOME/plugins</span> are off unless listed
+          in
           <span className="mono"> plugins.enabled</span>. Manage flags from the Config tab.
         </p>
       </>
@@ -591,7 +617,10 @@ export function ToolsPage(): React.JSX.Element {
   }
 
   const renderModels = (): React.JSX.Element => {
-    if (!models) return <p className="panel-note">{loading === 'models' ? 'Contacting bridge…' : 'No data yet.'}</p>
+    if (!models)
+      return (
+        <p className="panel-note">{loading === 'models' ? 'Contacting bridge…' : 'No data yet.'}</p>
+      )
     return (
       <>
         <div className="cards">
@@ -705,7 +734,8 @@ export function ToolsPage(): React.JSX.Element {
     setNote(null)
     setError(null)
     if (next === 'mcp' && !mcp) void load('mcp')
-    if (next === 'skills' && !skills) void load('skills', { query: skillQuery, offset: skillOffset })
+    if (next === 'skills' && !skills)
+      void load('skills', { query: skillQuery, offset: skillOffset })
     if (next === 'cron' && !cron) void load('cron')
     if (next === 'plugins' && !plugins) void load('plugins')
     if (next === 'models' && !models) void load('models')
@@ -737,7 +767,12 @@ export function ToolsPage(): React.JSX.Element {
             className="button"
             disabled={busy || loading !== null}
             data-testid="tools-refresh"
-            onClick={() => void load(tab, tab === 'skills' ? { query: skillQuery, offset: skillOffset } : undefined)}
+            onClick={() =>
+              void load(
+                tab,
+                tab === 'skills' ? { query: skillQuery, offset: skillOffset } : undefined,
+              )
+            }
           >
             {loading !== null ? 'Loading…' : 'Refresh'}
           </button>

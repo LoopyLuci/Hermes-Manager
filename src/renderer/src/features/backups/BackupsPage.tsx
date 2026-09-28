@@ -15,7 +15,7 @@ const KIND_LABELS: Record<string, string> = {
   config: 'config',
   snapshot: 'snapshot',
   'state-db': 'state.db',
-  other: 'other'
+  other: 'other',
 }
 
 export function BackupsPage(): React.JSX.Element {
@@ -82,7 +82,10 @@ export function BackupsPage(): React.JSX.Element {
     try {
       const result = await bridgeApi.createBackup('full')
       if (!aliveRef.current) return
-      if (result.ok) setNote(`full backup spawned (pid ${result.pid ?? '?'}) — tail ${result.log ?? 'manager-backup.log'}`)
+      if (result.ok)
+        setNote(
+          `full backup spawned (pid ${result.pid ?? '?'}) — tail ${result.log ?? 'manager-backup.log'}`,
+        )
       else setError(result.detail ?? 'backup failed to start')
     } catch (cause) {
       if (!aliveRef.current) return
@@ -139,7 +142,9 @@ export function BackupsPage(): React.JSX.Element {
       const result = await bridgeApi.restoreConfig(restoreTarget.path)
       if (!aliveRef.current) return
       if (result.ok) {
-        setNote(`config restored from ${restoreTarget.name}${result.created_backup ? ` (previous saved to ${result.created_backup})` : ''}`)
+        setNote(
+          `config restored from ${restoreTarget.name}${result.created_backup ? ` (previous saved to ${result.created_backup})` : ''}`,
+        )
         setRestoreTarget(null)
         setRestorePreview(null)
         await refresh()
@@ -164,7 +169,9 @@ export function BackupsPage(): React.JSX.Element {
           <p className="subtitle">
             {report ? (
               <>
-                <span className={`badge badge-${report.source === 'deep' ? 'ready' : 'degraded'}`}>{report.source}</span>{' '}
+                <span className={`badge badge-${report.source === 'deep' ? 'ready' : 'degraded'}`}>
+                  {report.source}
+                </span>{' '}
                 {items.length} item(s)
               </>
             ) : (
@@ -173,7 +180,13 @@ export function BackupsPage(): React.JSX.Element {
           </p>
         </div>
         <div className="toolbar">
-          <button type="button" className="button" disabled={busy} data-testid="create-snapshot" onClick={() => void createSnapshot()}>
+          <button
+            type="button"
+            className="button"
+            disabled={busy}
+            data-testid="create-snapshot"
+            onClick={() => void createSnapshot()}
+          >
             Quick snapshot
           </button>
           <button
@@ -209,7 +222,9 @@ export function BackupsPage(): React.JSX.Element {
           <div className="panel-head">
             <h2>Restore config from {restoreTarget.name}</h2>
             <span className="panel-note">
-              {restorePreview.ok ? `${restorePreview.changes.length} change(s) — confirm to write` : (restorePreview.detail ?? '')}
+              {restorePreview.ok
+                ? `${restorePreview.changes.length} change(s) — confirm to write`
+                : (restorePreview.detail ?? '')}
             </span>
           </div>
           {restorePreview.ok ? (
@@ -219,7 +234,9 @@ export function BackupsPage(): React.JSX.Element {
                   <li className="diff-row" key={change.path} data-testid="restore-row">
                     <span className="chip chip-debug">config</span>
                     <span className="mono diff-path">{change.path}</span>
-                    <span className={`chip chip-${change.action === 'delete' ? 'warn' : 'ok'}`}>{change.action}</span>
+                    <span className={`chip chip-${change.action === 'delete' ? 'warn' : 'ok'}`}>
+                      {change.action}
+                    </span>
                     <span className="diff-current mono">{change.current ?? '—'}</span>
                     <span className="diff-arrow">→</span>
                     <span className="diff-next mono">{change.next ?? '—'}</span>
@@ -227,7 +244,13 @@ export function BackupsPage(): React.JSX.Element {
                 ))}
               </ul>
               <div className="toolbar-row">
-                <button type="button" className="button button-primary" disabled={busy} data-testid="restore-confirm" onClick={() => void confirmRestore()}>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  disabled={busy}
+                  data-testid="restore-confirm"
+                  onClick={() => void confirmRestore()}
+                >
                   {busy ? 'Restoring…' : 'Confirm restore'}
                 </button>
                 <button
@@ -279,7 +302,9 @@ export function BackupsPage(): React.JSX.Element {
             {items.map((item) => (
               <tr key={item.path}>
                 <td>
-                  <span className={`chip ${item.kind === 'config' ? 'chip-info' : item.kind === 'snapshot' ? 'chip-ok' : 'chip-debug'}`}>
+                  <span
+                    className={`chip ${item.kind === 'config' ? 'chip-info' : item.kind === 'snapshot' ? 'chip-ok' : 'chip-debug'}`}
+                  >
                     {KIND_LABELS[item.kind] ?? item.kind}
                   </span>
                 </td>
@@ -288,7 +313,13 @@ export function BackupsPage(): React.JSX.Element {
                 <td className="mono">{item.modified}</td>
                 <td className="field-actions">
                   {item.kind === 'config' ? (
-                    <button type="button" className="button button-ghost" disabled={busy} data-testid={`restore-${item.name}`} onClick={() => void openRestore(item)}>
+                    <button
+                      type="button"
+                      className="button button-ghost"
+                      disabled={busy}
+                      data-testid={`restore-${item.name}`}
+                      onClick={() => void openRestore(item)}
+                    >
                       Restore
                     </button>
                   ) : null}

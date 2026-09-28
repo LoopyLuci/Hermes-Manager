@@ -41,64 +41,65 @@ export function ChatPage(): React.JSX.Element {
     if (node) node.scrollTop = node.scrollHeight
   }, [entries, liveText])
 
-  const handleEvent = useCallback(
-    (event: ChatEvent) => {
-      switch (event.type) {
-        case 'text': {
-          const text = String(event.text ?? '')
-          setLiveText((current) => (current ?? '') + text)
-          break
-        }
-        case 'tool_use':
-          setEntries((current) => [
-            ...current,
-            { kind: 'tool', name: String(event.name ?? 'tool'), detail: 'running…' }
-          ])
-          break
-        case 'tool_result':
-          setEntries((current) => {
-            const next = [...current]
-            for (let index = next.length - 1; index >= 0; index -= 1) {
-              const entry = next[index]
-              if (entry && entry.kind === 'tool' && entry.name === String(event.name)) {
-                next[index] = {
-                  kind: 'tool',
-                  name: entry.name,
-                  detail: String(event.output ?? (event.is_error ? 'failed' : 'done'))
-                }
-                break
-              }
-            }
-            return next
-          })
-          break
-        case 'result': {
-          const finalText = typeof event.text === 'string' ? event.text : ''
-          setEntries((current) => [
-            ...current,
-            { kind: 'assistant', text: finalText || (liveTextRef.current ?? '') }
-          ])
-          setLiveText(null)
-          const resolved = typeof event.session_id === 'string' && event.session_id ? event.session_id : null
-          if (resolved) setSessionId(resolved)
-          break
-        }
-        case 'system':
-          if (typeof event.session_id === 'string' && event.session_id) setSessionId(event.session_id)
-          break
-        case 'manager.done':
-          if (typeof event.session_id === 'string' && event.session_id) setSessionId(event.session_id)
-          break
-        case 'manager.error':
-          setError(String(event.detail ?? 'chat failed'))
-          setEntries((current) => [...current, { kind: 'notice', text: String(event.detail ?? 'chat failed') }])
-          break
-        default:
-          break
+  const handleEvent = useCallback((event: ChatEvent) => {
+    switch (event.type) {
+      case 'text': {
+        const text = String(event.text ?? '')
+        setLiveText((current) => (current ?? '') + text)
+        break
       }
-    },
-    []
-  )
+      case 'tool_use':
+        setEntries((current) => [
+          ...current,
+          { kind: 'tool', name: String(event.name ?? 'tool'), detail: 'running…' },
+        ])
+        break
+      case 'tool_result':
+        setEntries((current) => {
+          const next = [...current]
+          for (let index = next.length - 1; index >= 0; index -= 1) {
+            const entry = next[index]
+            if (entry && entry.kind === 'tool' && entry.name === String(event.name)) {
+              next[index] = {
+                kind: 'tool',
+                name: entry.name,
+                detail: String(event.output ?? (event.is_error ? 'failed' : 'done')),
+              }
+              break
+            }
+          }
+          return next
+        })
+        break
+      case 'result': {
+        const finalText = typeof event.text === 'string' ? event.text : ''
+        setEntries((current) => [
+          ...current,
+          { kind: 'assistant', text: finalText || (liveTextRef.current ?? '') },
+        ])
+        setLiveText(null)
+        const resolved =
+          typeof event.session_id === 'string' && event.session_id ? event.session_id : null
+        if (resolved) setSessionId(resolved)
+        break
+      }
+      case 'system':
+        if (typeof event.session_id === 'string' && event.session_id) setSessionId(event.session_id)
+        break
+      case 'manager.done':
+        if (typeof event.session_id === 'string' && event.session_id) setSessionId(event.session_id)
+        break
+      case 'manager.error':
+        setError(String(event.detail ?? 'chat failed'))
+        setEntries((current) => [
+          ...current,
+          { kind: 'notice', text: String(event.detail ?? 'chat failed') },
+        ])
+        break
+      default:
+        break
+    }
+  }, [])
 
   const send = async (): Promise<void> => {
     const text = draft.trim()
@@ -114,7 +115,7 @@ export function ChatPage(): React.JSX.Element {
       await bridgeApi.chat(
         { text, session_id: sessionId, chat_id: chatIdRef.current },
         handleEvent,
-        controller.signal
+        controller.signal,
       )
     } catch (cause) {
       if (!controller.signal.aborted) {
@@ -153,11 +154,15 @@ export function ChatPage(): React.JSX.Element {
     try {
       const page = await bridgeApi.sessionMessages(id, 200, 'latest')
       const restored: Entry[] = page.messages
-        .filter((message) => (message.role === 'user' || message.role === 'assistant') && String(message.content ?? '').trim())
+        .filter(
+          (message) =>
+            (message.role === 'user' || message.role === 'assistant') &&
+            String(message.content ?? '').trim(),
+        )
         .map((message) =>
           message.role === 'user'
             ? { kind: 'user', text: String(message.content) }
-            : { kind: 'assistant', text: String(message.content) }
+            : { kind: 'assistant', text: String(message.content) },
         )
       setEntries(restored)
     } catch (cause) {

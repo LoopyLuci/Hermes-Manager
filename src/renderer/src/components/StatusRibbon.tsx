@@ -3,7 +3,7 @@ import type { HealthReport } from '@shared/protocol'
 export function StatusRibbon({
   health,
   live,
-  error
+  error,
 }: {
   health: HealthReport | null
   live: boolean

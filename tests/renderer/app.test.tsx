@@ -31,7 +31,7 @@ import type {
   SourceStatus,
   UpdateApplyResult,
   UpdateCheckResult,
-  UpdateReport
+  UpdateReport,
 } from '@shared/protocol'
 
 const healthFixture: HealthReport = {
@@ -44,12 +44,32 @@ const healthFixture: HealthReport = {
   hermes_repo: 'C:\\hermes\\hermes-agent',
   runtime: { python: 'C:\\hermes\\venv\\python.exe', kind: 'hermes-venv', version: '3.14.7' },
   layers: {
-    rest: { state: 'ready', detail: 'hermes serve answering HTTP 404', origin: 'http://127.0.0.1:9119', latency_ms: 3 },
-    files: { state: 'ready', detail: '7 active logs, 12.4 MB', origin: 'C:\\hermes\\logs', latency_ms: 1 },
+    rest: {
+      state: 'ready',
+      detail: 'hermes serve answering HTTP 404',
+      origin: 'http://127.0.0.1:9119',
+      latency_ms: 3,
+    },
+    files: {
+      state: 'ready',
+      detail: '7 active logs, 12.4 MB',
+      origin: 'C:\\hermes\\logs',
+      latency_ms: 1,
+    },
     db: { state: 'ready', detail: '34 tables', origin: 'C:\\hermes\\state.db', latency_ms: 2 },
-    cli: { state: 'ready', detail: 'hermes CLI from checkout', origin: 'C:\\hermes\\hermes-agent', latency_ms: 0 },
-    deep: { state: 'degraded', detail: 'partial imports', origin: 'C:\\hermes\\hermes-agent', latency_ms: 120 }
-  }
+    cli: {
+      state: 'ready',
+      detail: 'hermes CLI from checkout',
+      origin: 'C:\\hermes\\hermes-agent',
+      latency_ms: 0,
+    },
+    deep: {
+      state: 'degraded',
+      detail: 'partial imports',
+      origin: 'C:\\hermes\\hermes-agent',
+      latency_ms: 120,
+    },
+  },
 }
 
 const sourcesFixture: SourceStatus = {
@@ -63,14 +83,14 @@ const sourcesFixture: SourceStatus = {
     updates: 'cli',
     backups: 'cli',
     config: 'rest',
-    tools: 'rest'
-  }
+    tools: 'rest',
+  },
 }
 
 const logFilesFixture: LogFile[] = [
   { name: 'agent.log', size: 1664613, modified: '2026-09-26T10:06:07+00:00', rotated: false },
   { name: 'errors.log', size: 788172, modified: '2026-09-26T10:05:43+00:00', rotated: false },
-  { name: 'agent.log.1', size: 5242981, modified: '2026-09-24T21:03:30+00:00', rotated: true }
+  { name: 'agent.log.1', size: 5242981, modified: '2026-09-24T21:03:30+00:00', rotated: true },
 ]
 
 const logTailFixture: LogBatch = {
@@ -85,7 +105,7 @@ const logTailFixture: LogBatch = {
       logger: 'agent.conversation_loop',
       message: 'API call #369: model=test',
       raw: '2026-09-26 10:00:00,123 INFO [20260918_112544_1b2239] agent.conversation_loop: API call #369: model=test',
-      seq: 0
+      seq: 0,
     },
     {
       ts: '2026-09-26 10:00:01,456',
@@ -94,9 +114,9 @@ const logTailFixture: LogBatch = {
       logger: 'agent.chat_completion_helpers',
       message: 'Streaming failed before delivery',
       raw: '2026-09-26 10:00:01,456 ERROR agent.chat_completion_helpers: Streaming failed before delivery',
-      seq: 1
-    }
-  ]
+      seq: 1,
+    },
+  ],
 }
 
 const bridgeInfo: BridgeInfo = { url: 'http://127.0.0.1:9119', token: 'token', pid: 7 }
@@ -114,7 +134,7 @@ const gatewayStatusFixture: GatewayStatus = {
     code_sha: 'abcdef1234567890',
     code_version: '0.9.9',
     hermes_home: 'C:\\hermes',
-    served_profiles: ['default']
+    served_profiles: ['default'],
   },
   state: {
     state: 'running',
@@ -126,9 +146,9 @@ const gatewayStatusFixture: GatewayStatus = {
     exit_reason: null,
     restart_requested: false,
     code_sha: 'abcdef1234567890',
-    code_version: '0.9.9'
+    code_version: '0.9.9',
   },
-  detail: null
+  detail: null,
 }
 
 const fleetFixture: FleetReport = {
@@ -141,16 +161,18 @@ const fleetFixture: FleetReport = {
       code_sha: 'abcdef1234567890',
       code_version: '0.9.9',
       code_root: null,
-      served_profiles: ['default']
-    }
+      served_profiles: ['default'],
+    },
   ],
-  detail: null
+  detail: null,
 }
 
 const processesFixture: ProcessReport = {
   source: 'files',
-  processes: [{ kind: 'gateway', name: 'gateway · default', pid: 4242, status: 'current', detail: '0.9.9' }],
-  detail: null
+  processes: [
+    { kind: 'gateway', name: 'gateway · default', pid: 4242, status: 'current', detail: '0.9.9' },
+  ],
+  detail: null,
 }
 
 const lifecycleFixture: LifecycleResult = {
@@ -158,7 +180,7 @@ const lifecycleFixture: LifecycleResult = {
   action: 'stop',
   pid: 9001,
   log: 'gateway-stop.log',
-  detail: null
+  detail: null,
 }
 
 const sessionListFixture: SessionList = {
@@ -179,7 +201,7 @@ const sessionListFixture: SessionList = {
       input_tokens: 10,
       output_tokens: 20,
       archived: false,
-      profile: 'default'
+      profile: 'default',
     },
     {
       id: 'sess-beta',
@@ -194,9 +216,9 @@ const sessionListFixture: SessionList = {
       input_tokens: 5,
       output_tokens: 6,
       archived: true,
-      profile: 'default'
-    }
-  ]
+      profile: 'default',
+    },
+  ],
 }
 
 const messagesFixture: MessagePage = {
@@ -214,7 +236,7 @@ const messagesFixture: MessagePage = {
       timestamp: '2026-09-20T10:00:01Z',
       display_kind: null,
       active: true,
-      compacted: false
+      compacted: false,
     },
     {
       id: 2,
@@ -226,9 +248,9 @@ const messagesFixture: MessagePage = {
       timestamp: '2026-09-20T10:00:05Z',
       display_kind: null,
       active: true,
-      compacted: false
-    }
-  ]
+      compacted: false,
+    },
+  ],
 }
 
 const chatStreamFixture = [
@@ -237,7 +259,7 @@ const chatStreamFixture = [
   { type: 'text', text: 'hello ' },
   { type: 'text', text: 'world' },
   { type: 'result', session_id: 'sess-new', exit_code: 0, text: 'hello world', tokens: {} },
-  { type: 'manager.done', exit_code: 0, session_id: 'sess-new' }
+  { type: 'manager.done', exit_code: 0, session_id: 'sess-new' },
 ]
 
 const configDocFixture: ConfigDocument = {
@@ -247,16 +269,28 @@ const configDocFixture: ConfigDocument = {
     model: 'openrouter/test-model',
     telemetry: false,
     terminal: { backend: 'vte' },
-    approvals: { mode: 'auto' }
+    approvals: { mode: 'auto' },
   },
   defaults: null,
   fields: [
-    { path: 'approvals.mode', type: 'string', category: 'approvals', description: null, enum: null },
+    {
+      path: 'approvals.mode',
+      type: 'string',
+      category: 'approvals',
+      description: null,
+      enum: null,
+    },
     { path: 'model', type: 'string', category: 'model', description: null, enum: null },
     { path: 'telemetry', type: 'boolean', category: 'telemetry', description: null, enum: null },
-    { path: 'terminal.backend', type: 'string', category: 'terminal', description: null, enum: null }
+    {
+      path: 'terminal.backend',
+      type: 'string',
+      category: 'terminal',
+      description: null,
+      enum: null,
+    },
   ],
-  detail: null
+  detail: null,
 }
 
 const envReportFixture: EnvReport = {
@@ -270,7 +304,7 @@ const envReportFixture: EnvReport = {
       is_set: true,
       is_secret: true,
       category: 'provider',
-      description: null
+      description: null,
     },
     {
       key: 'WEB_TOOLS_DEBUG',
@@ -278,9 +312,9 @@ const envReportFixture: EnvReport = {
       is_set: true,
       is_secret: false,
       category: 'tool',
-      description: null
-    }
-  ]
+      description: null,
+    },
+  ],
 }
 
 const configDiffFixture: ConfigDiff = {
@@ -293,7 +327,7 @@ const configDiffFixture: ConfigDiff = {
       action: 'set',
       current: '"openrouter/test-model"',
       next: '"openrouter/new-model"',
-      type: 'string'
+      type: 'string',
     },
     {
       kind: 'env',
@@ -301,9 +335,9 @@ const configDiffFixture: ConfigDiff = {
       action: 'set',
       current: 'true',
       next: 'false',
-      type: 'string'
-    }
-  ]
+      type: 'string',
+    },
+  ],
 }
 
 const configApplyFixture: ConfigApplyResult = {
@@ -311,7 +345,7 @@ const configApplyFixture: ConfigApplyResult = {
   applied: configDiffFixture.changes,
   backups: ['C:\\hermes\\backups\\config\\config.yaml.mgr-20260928-120000'],
   warnings: [],
-  detail: null
+  detail: null,
 }
 
 const updateReportFixture: UpdateReport = {
@@ -327,12 +361,12 @@ const updateReportFixture: UpdateReport = {
     steps_ok: 2,
     steps_failed: 1,
     path: 'C:\\hermes\\logs\\update_receipts\\latest.json',
-    detail: null
+    detail: null,
   },
   running: false,
   pid: null,
   log: null,
-  detail: null
+  detail: null,
 }
 
 const updateCheckFixture: UpdateCheckResult = {
@@ -341,10 +375,15 @@ const updateCheckFixture: UpdateCheckResult = {
   behind: null,
   branch: null,
   commits: [],
-  detail: 'update check unavailable: no deep layer'
+  detail: 'update check unavailable: no deep layer',
 }
 
-const updateApplyFixture: UpdateApplyResult = { ok: true, pid: 777, log: 'manager-update.log', detail: null }
+const updateApplyFixture: UpdateApplyResult = {
+  ok: true,
+  pid: 777,
+  log: 'manager-update.log',
+  detail: null,
+}
 
 const backupReportFixture: BackupReport = {
   source: 'files',
@@ -355,30 +394,30 @@ const backupReportFixture: BackupReport = {
       name: 'config.yaml.good.20260922-120000',
       path: 'C:\\hermes\\backups\\config\\config.yaml.good.20260922-120000',
       size: 6400,
-      modified: '2026-09-22T12:00:00+00:00'
+      modified: '2026-09-22T12:00:00+00:00',
     },
     {
       kind: 'full',
       name: 'hermes-backup-2026-08-25-101431-abc123.zip',
       path: 'C:\\hermes\\backups\\hermes-backup-2026-08-25-101431-abc123.zip',
       size: 420167367,
-      modified: '2026-08-25T10:14:31+00:00'
+      modified: '2026-08-25T10:14:31+00:00',
     },
     {
       kind: 'snapshot',
       name: '20260928_100000',
       path: 'C:\\hermes\\state-snapshots\\20260928_100000',
       size: 1024,
-      modified: '2026-09-28T10:00:00+00:00'
+      modified: '2026-09-28T10:00:00+00:00',
     },
     {
       kind: 'state-db',
       name: 'state.db.pre-update-emergency-2026-09-19T23-09-42-292Z.bak',
       path: 'C:\\hermes\\state.db.pre-update-emergency-2026-09-19T23-09-42-292Z.bak',
       size: 366526464,
-      modified: '2026-09-19T23:09:42+00:00'
-    }
-  ]
+      modified: '2026-09-19T23:09:42+00:00',
+    },
+  ],
 }
 
 const restorePreviewFixture: ConfigRestorePreview = {
@@ -392,16 +431,16 @@ const restorePreviewFixture: ConfigRestorePreview = {
       action: 'set',
       current: '"openrouter/test-model"',
       next: '"openrouter/old-model"',
-      type: null
-    }
-  ]
+      type: null,
+    },
+  ],
 }
 
 const restoreResultFixture: ConfigRestoreResult = {
   ok: true,
   backup: 'C:\\hermes\\backups\\config\\config.yaml.good.20260922-120000',
   created_backup: 'C:\\hermes\\backups\\config\\config.yaml.mgr-20260928-130000',
-  detail: null
+  detail: null,
 }
 
 const backupCreateFixture: BackupCreateResult = {
@@ -409,7 +448,7 @@ const backupCreateFixture: BackupCreateResult = {
   pid: null,
   log: null,
   path: null,
-  detail: 'quick snapshot unavailable: no deep layer'
+  detail: 'quick snapshot unavailable: no deep layer',
 }
 
 const mcpReportFixture: McpReport = {
@@ -424,12 +463,17 @@ const mcpReportFixture: McpReport = {
       url: null,
       enabled: true,
       timeout: 120,
-      connect_timeout: null
-    }
-  ]
+      connect_timeout: null,
+    },
+  ],
 }
 
-const mcpTestFixture: McpTestResult = { ok: true, pid: 4321, log: 'manager-mcp-test.log', detail: null }
+const mcpTestFixture: McpTestResult = {
+  ok: true,
+  pid: 4321,
+  log: 'manager-mcp-test.log',
+  detail: null,
+}
 
 const skillCatalogFixture: SkillList = {
   source: 'files',
@@ -442,8 +486,8 @@ const skillCatalogFixture: SkillList = {
   skills: [
     { name: 'alpha-skill', description: 'Alpha tooling helper', enabled: true },
     { name: 'beta-skill', description: 'Beta helper', enabled: false },
-    { name: 'gamma-skill', description: 'Gamma helper', enabled: true }
-  ]
+    { name: 'gamma-skill', description: 'Gamma helper', enabled: true },
+  ],
 }
 
 const cronReportFixture: CronReport = {
@@ -462,12 +506,17 @@ const cronReportFixture: CronReport = {
       next_run_at: '2026-09-28T10:00:00Z',
       no_agent: true,
       script: 'sync.py',
-      prompt: null
-    }
-  ]
+      prompt: null,
+    },
+  ],
 }
 
-const cronActionFixture: CronActionResult = { ok: true, pid: 555, log: 'manager-cron.log', detail: null }
+const cronActionFixture: CronActionResult = {
+  ok: true,
+  pid: 555,
+  log: 'manager-cron.log',
+  detail: null,
+}
 
 const pluginReportFixture: PluginReport = {
   source: 'files',
@@ -475,8 +524,8 @@ const pluginReportFixture: PluginReport = {
   detail: null,
   plugins: [
     { name: 'browser', source: 'bundled', enabled: true, description: null },
-    { name: 'kanban', source: 'bundled', enabled: true, description: null }
-  ]
+    { name: 'kanban', source: 'bundled', enabled: true, description: null },
+  ],
 }
 
 const modelsReportFixture: LocalModelsReport = {
@@ -484,7 +533,7 @@ const modelsReportFixture: LocalModelsReport = {
   ollama_running: false,
   ollama_models: [],
   detail: 'ollama server not responding on :11434',
-  gguf: [{ name: 'test-model.gguf', size: 1_048_576, details: 'local gguf' }]
+  gguf: [{ name: 'test-model.gguf', size: 1_048_576, details: 'local gguf' }],
 }
 
 function ndjsonResponse(events: unknown[]): Response {
@@ -494,7 +543,7 @@ function ndjsonResponse(events: unknown[]): Response {
     start(controller) {
       controller.enqueue(encoder.encode(payload))
       controller.close()
-    }
+    },
   })
   return { ok: true, status: 200, body: stream, json: async () => ({}) } as unknown as Response
 }
@@ -513,7 +562,7 @@ function installBridge(): void {
     detectHermesHome: async () => null,
     pickHermesHome: async () => null,
     onBridgeLog: () => () => undefined,
-    onHermesHomeMissing: () => () => undefined
+    onHermesHomeMissing: () => () => undefined,
   }
 }
 
@@ -524,7 +573,12 @@ function mockFetchByPath(): void {
     const url = String(input)
     const method = (init?.method ?? 'GET').toUpperCase()
     if (method === 'POST' && url.includes('/chat')) {
-      if (url.includes('/abort')) return Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true }) } as Response)
+      if (url.includes('/abort'))
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ ok: true }),
+        } as Response)
       return Promise.resolve(ndjsonResponse(chatStreamFixture))
     }
     let payload: unknown
@@ -532,8 +586,10 @@ function mockFetchByPath(): void {
     else if (method === 'POST' && url.includes('/updates/check')) payload = updateCheckFixture
     else if (method === 'POST' && url.includes('/updates/apply')) payload = updateApplyFixture
     else if (url.includes('/updates')) payload = updateReportFixture
-    else if (method === 'POST' && url.includes('/backups/config/preview')) payload = restorePreviewFixture
-    else if (method === 'POST' && url.includes('/backups/config/restore')) payload = restoreResultFixture
+    else if (method === 'POST' && url.includes('/backups/config/preview'))
+      payload = restorePreviewFixture
+    else if (method === 'POST' && url.includes('/backups/config/restore'))
+      payload = restoreResultFixture
     else if (method === 'POST' && url.includes('/backups/create')) payload = backupCreateFixture
     else if (method === 'POST' && url.includes('/backups/delete')) {
       const body = JSON.parse(String(init?.body ?? '{}')) as { path?: string }
@@ -542,7 +598,7 @@ function mockFetchByPath(): void {
     } else if (url.includes('/backups')) {
       payload = {
         ...backupReportFixture,
-        items: backupReportFixture.items.filter((item) => !deletedPaths.has(item.path))
+        items: backupReportFixture.items.filter((item) => !deletedPaths.has(item.path)),
       }
     } else if (method === 'POST' && url.includes('/tools/mcp/test')) {
       payload = mcpTestFixture
@@ -550,7 +606,11 @@ function mockFetchByPath(): void {
       const body = JSON.parse(String(init?.body ?? '{}')) as { name: string; enable: boolean }
       if (body.enable) disabledSkills.delete(body.name)
       else disabledSkills.add(body.name)
-      payload = { ok: true, disabled: [...disabledSkills], detail: null } satisfies SkillToggleResult
+      payload = {
+        ok: true,
+        disabled: [...disabledSkills],
+        detail: null,
+      } satisfies SkillToggleResult
     } else if (method === 'POST' && url.includes('/tools/cron/action')) {
       payload = cronActionFixture
     } else if (url.includes('/tools/mcp')) {
@@ -561,8 +621,8 @@ function mockFetchByPath(): void {
         disabled_count: disabledSkills.size,
         skills: skillCatalogFixture.skills.map((skill) => ({
           ...skill,
-          enabled: !disabledSkills.has(skill.name)
-        }))
+          enabled: !disabledSkills.has(skill.name),
+        })),
       }
     } else if (url.includes('/tools/cron')) {
       payload = cronReportFixture
@@ -585,7 +645,7 @@ function mockFetchByPath(): void {
             action: change.op ?? 'set',
             current: null,
             next: change.value === undefined ? null : JSON.stringify(change.value),
-            type: null
+            type: null,
           })),
           ...(body.env ?? []).map((change) => ({
             kind: 'env',
@@ -593,9 +653,9 @@ function mockFetchByPath(): void {
             action: change.op ?? 'set',
             current: null,
             next: change.value ?? null,
-            type: null
-          }))
-        ]
+            type: null,
+          })),
+        ],
       }
     } else if (method === 'POST' && url.includes('/config/apply')) payload = configApplyFixture
     else if (url.includes('/config/env')) payload = envReportFixture
@@ -707,7 +767,9 @@ describe('App shell', () => {
     await waitFor(() => {
       const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls as unknown[]
       const post = calls.find(
-        (call) => (call as [string, RequestInit])[1]?.method === 'POST' && String((call as [string, RequestInit])[0]).includes('/gateway/lifecycle')
+        (call) =>
+          (call as [string, RequestInit])[1]?.method === 'POST' &&
+          String((call as [string, RequestInit])[0]).includes('/gateway/lifecycle'),
       )
       expect(post).toBeTruthy()
     })
@@ -723,7 +785,7 @@ describe('App shell', () => {
     })
 
     const rows = screen.getAllByTestId('session-row')
-    fireEvent.click(rows[0])
+    fireEvent.click(rows[0]!)
     await screen.findByTestId('messages-panel', undefined, { timeout: 3000 })
     await waitFor(() => {
       expect(screen.getByText('hello there')).toBeTruthy()
@@ -745,7 +807,7 @@ describe('App shell', () => {
         expect(transcript.textContent).toContain('Hello Hermes')
         expect(transcript.textContent).toContain('hello world')
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     )
     await waitFor(() => expect(screen.getByText('sess-new')).toBeTruthy())
   })
@@ -754,7 +816,9 @@ describe('App shell', () => {
     render(<App />)
     fireEvent.click(await screen.findByTestId('nav-config'))
 
-    const modelField = (await screen.findByTestId('field-model', undefined, { timeout: 3000 })) as HTMLInputElement
+    const modelField = (await screen.findByTestId('field-model', undefined, {
+      timeout: 3000,
+    })) as HTMLInputElement
     expect(modelField.value).toBe('openrouter/test-model')
     await waitFor(() => expect(screen.getByTestId('change-count').textContent).toBe('0 pending'))
 
@@ -817,7 +881,7 @@ describe('App shell', () => {
     fireEvent.click(screen.getByTestId('apply-update'))
     await waitFor(
       () => expect(screen.getByTestId('update-note').textContent).toContain('manager-update.log'),
-      { timeout: 3000 }
+      { timeout: 3000 },
     )
   })
 
@@ -835,7 +899,7 @@ describe('App shell', () => {
     fireEvent.click(screen.getByTestId('restore-confirm'))
     await waitFor(
       () => expect(screen.getByTestId('backup-note').textContent).toContain('config restored'),
-      { timeout: 3000 }
+      { timeout: 3000 },
     )
 
     const deleteButton = screen.getByTestId('delete-hermes-backup-2026-08-25-101431-abc123.zip')
@@ -843,13 +907,16 @@ describe('App shell', () => {
     expect(deleteButton.textContent).toBe('Confirm?')
     fireEvent.click(deleteButton)
     await waitFor(
-      () => expect(screen.getByTestId('backup-note').textContent).toContain('deleted hermes-backup'),
-      { timeout: 3000 }
+      () =>
+        expect(screen.getByTestId('backup-note').textContent).toContain('deleted hermes-backup'),
+      { timeout: 3000 },
     )
     await waitFor(
       () =>
-        expect(screen.queryByTestId('delete-hermes-backup-2026-08-25-101431-abc123.zip')).toBeNull(),
-      { timeout: 3000 }
+        expect(
+          screen.queryByTestId('delete-hermes-backup-2026-08-25-101431-abc123.zip'),
+        ).toBeNull(),
+      { timeout: 3000 },
     )
   })
 
@@ -863,7 +930,7 @@ describe('App shell', () => {
     fireEvent.click(screen.getByTestId('mcp-test-webbuilder'))
     await waitFor(
       () => expect(screen.getByTestId('tools-note').textContent).toContain('manager-mcp-test.log'),
-      { timeout: 3000 }
+      { timeout: 3000 },
     )
 
     const toggle = screen.getByTestId('mcp-toggle-webbuilder')
@@ -872,13 +939,13 @@ describe('App shell', () => {
     fireEvent.click(screen.getByTestId('mcp-toggle-webbuilder'))
     await waitFor(
       () => expect(screen.getByTestId('tools-note').textContent).toContain('webbuilder disabled'),
-      { timeout: 3000 }
+      { timeout: 3000 },
     )
     const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls as unknown[]
     const apply = calls.find(
       (call) =>
         (call as [string, RequestInit])[1]?.method === 'POST' &&
-        String((call as [string, RequestInit])[0]).includes('/config/apply')
+        String((call as [string, RequestInit])[0]).includes('/config/apply'),
     )
     expect(apply).toBeTruthy()
   })
@@ -889,18 +956,24 @@ describe('App shell', () => {
 
     fireEvent.click(await screen.findByTestId('tab-skills'))
     await screen.findByTestId('skill-table', undefined, { timeout: 3000 })
-    await waitFor(() => expect(screen.getByTestId('skill-beta-skill').textContent).toContain('disabled'))
+    await waitFor(() =>
+      expect(screen.getByTestId('skill-beta-skill').textContent).toContain('disabled'),
+    )
     expect(screen.getByTestId('skill-alpha-skill').textContent).toContain('enabled')
 
     fireEvent.click(screen.getByTestId('skill-toggle-alpha-skill'))
     await waitFor(
       () => expect(screen.getByTestId('tools-note').textContent).toContain('skills.disabled'),
-      { timeout: 3000 }
+      { timeout: 3000 },
     )
-    await waitFor(() => expect(screen.getByTestId('skill-alpha-skill').textContent).toContain('disabled'))
+    await waitFor(() =>
+      expect(screen.getByTestId('skill-alpha-skill').textContent).toContain('disabled'),
+    )
 
     fireEvent.click(screen.getByTestId('skill-search-go'))
-    await waitFor(() => expect(screen.getByTestId('skill-beta-skill')).toBeTruthy(), { timeout: 3000 })
+    await waitFor(() => expect(screen.getByTestId('skill-beta-skill')).toBeTruthy(), {
+      timeout: 3000,
+    })
   })
 
   it('drives cron jobs and inspects plugins and models', async () => {
@@ -917,16 +990,20 @@ describe('App shell', () => {
     fireEvent.click(screen.getByTestId('cron-run-job-1'))
     await waitFor(
       () => expect(screen.getByTestId('tools-note').textContent).toContain('manager-cron.log'),
-      { timeout: 3000 }
+      { timeout: 3000 },
     )
 
     fireEvent.click(screen.getByTestId('tab-plugins'))
     await screen.findByTestId('plugin-table', undefined, { timeout: 3000 })
-    await waitFor(() => expect(screen.getByTestId('plugin-kanban').textContent).toContain('bundled'))
+    await waitFor(() =>
+      expect(screen.getByTestId('plugin-kanban').textContent).toContain('bundled'),
+    )
 
     fireEvent.click(screen.getByTestId('tab-models'))
     await screen.findByTestId('models-gguf', undefined, { timeout: 3000 })
-    await waitFor(() => expect(screen.getByTestId('models-gguf').textContent).toContain('test-model.gguf'))
+    await waitFor(() =>
+      expect(screen.getByTestId('models-gguf').textContent).toContain('test-model.gguf'),
+    )
     expect(screen.getByTestId('models-ollama')).toBeTruthy()
     expect(screen.getByTestId('models-ollama').textContent).toContain('not responding')
   })

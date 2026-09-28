@@ -67,7 +67,9 @@ export function UpdatesPage(): React.JSX.Element {
       const result = await bridgeApi.applyUpdate()
       if (!aliveRef.current) return
       if (result.ok) {
-        setNote(`update spawned (pid ${result.pid ?? '?'}) — tail ${result.log ?? 'manager-update.log'}`)
+        setNote(
+          `update spawned (pid ${result.pid ?? '?'}) — tail ${result.log ?? 'manager-update.log'}`,
+        )
         await refresh()
       } else {
         setError(result.detail ?? 'update failed to start')
@@ -83,7 +85,11 @@ export function UpdatesPage(): React.JSX.Element {
   const identity = report?.identity
   const receipt = report?.receipt
   const outcomeClass =
-    receipt?.outcome === 'success' ? 'chip chip-ok' : receipt?.outcome ? 'chip chip-warn' : 'chip chip-debug'
+    receipt?.outcome === 'success'
+      ? 'chip chip-ok'
+      : receipt?.outcome
+        ? 'chip chip-warn'
+        : 'chip chip-debug'
 
   return (
     <section className="page page-updates">
@@ -93,11 +99,15 @@ export function UpdatesPage(): React.JSX.Element {
           <p className="subtitle">
             {report ? (
               <>
-                <span className={`badge badge-${report.source === 'deep' ? 'ready' : 'degraded'}`}>{report.source}</span>{' '}
+                <span className={`badge badge-${report.source === 'deep' ? 'ready' : 'degraded'}`}>
+                  {report.source}
+                </span>{' '}
                 <span className="mono">v{identity?.version ?? 'unknown'}</span> · sha{' '}
                 <span className="mono">{shortSha(identity?.sha ?? null)}</span>
                 {identity?.source ? ` · via ${identity.source}` : ''}
-                {report.running ? <span className="chip chip-info"> update running (pid {report.pid})</span> : null}
+                {report.running ? (
+                  <span className="chip chip-info"> update running (pid {report.pid})</span>
+                ) : null}
               </>
             ) : (
               'Contacting bridge…'
@@ -105,7 +115,13 @@ export function UpdatesPage(): React.JSX.Element {
           </p>
         </div>
         <div className="toolbar">
-          <button type="button" className="button" disabled={busy} data-testid="check-updates" onClick={() => void runCheck(false)}>
+          <button
+            type="button"
+            className="button"
+            disabled={busy}
+            data-testid="check-updates"
+            onClick={() => void runCheck(false)}
+          >
             Check for updates
           </button>
           <button
@@ -142,13 +158,17 @@ export function UpdatesPage(): React.JSX.Element {
         <div className="card">
           <span className="card-label">Code</span>
           <span className="card-value mono">{shortSha(identity?.sha ?? null)}</span>
-          <span className="card-note">{receipt ? `receipt: ${receipt.post_version ?? '—'}` : 'no receipt yet'}</span>
+          <span className="card-note">
+            {receipt ? `receipt: ${receipt.post_version ?? '—'}` : 'no receipt yet'}
+          </span>
         </div>
         <div className="card">
           <span className="card-label">Last update</span>
-          <span className="card-value">{receipt ? receipt.outcome ?? '—' : '—'}</span>
+          <span className="card-value">{receipt ? (receipt.outcome ?? '—') : '—'}</span>
           <span className="card-note">
-            {receipt ? `${receipt.steps_ok} ok / ${receipt.steps_failed} failed · ${receipt.finished_at ?? ''}` : 'never'}
+            {receipt
+              ? `${receipt.steps_ok} ok / ${receipt.steps_failed} failed · ${receipt.finished_at ?? ''}`
+              : 'never'}
           </span>
         </div>
         <div className="card">
@@ -167,7 +187,9 @@ export function UpdatesPage(): React.JSX.Element {
             </span>
           </div>
           {!check.supported ? (
-            <p className="panel-note">{check.detail ?? 'update checks are not supported for this install'}</p>
+            <p className="panel-note">
+              {check.detail ?? 'update checks are not supported for this install'}
+            </p>
           ) : (
             <>
               <p className="panel-note">
@@ -225,7 +247,9 @@ export function UpdatesPage(): React.JSX.Element {
             </tbody>
           </table>
         ) : (
-          <p className="panel-note">No update receipt yet — the receipt appears after the first `hermes update`.</p>
+          <p className="panel-note">
+            No update receipt yet — the receipt appears after the first `hermes update`.
+          </p>
         )}
       </div>
     </section>

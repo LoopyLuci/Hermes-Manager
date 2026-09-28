@@ -215,7 +215,14 @@ export type ChatEvent =
   | { type: 'text'; text: string }
   | { type: 'tool_use'; name: string; input?: unknown }
   | { type: 'tool_result'; name: string; output?: string; is_error?: boolean }
-  | { type: 'result'; session_id?: string; exit_code?: number; text?: string; tokens?: unknown; error?: string }
+  | {
+      type: 'result'
+      session_id?: string
+      exit_code?: number
+      text?: string
+      tokens?: unknown
+      error?: string
+    }
   | { type: string; [key: string]: unknown }
 
 export interface ConfigField {

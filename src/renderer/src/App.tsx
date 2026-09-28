@@ -22,7 +22,7 @@ const NAVIGATION = [
   { id: 'updates', label: 'Updates', ready: true, target: 'M6' },
   { id: 'backups', label: 'Backups', ready: true, target: 'M6' },
   { id: 'config', label: 'Config', ready: true, target: 'M5' },
-  { id: 'tools', label: 'Tools', ready: true }
+  { id: 'tools', label: 'Tools', ready: true },
 ] as const
 
 export function App(): React.JSX.Element {
@@ -51,7 +51,13 @@ export function App(): React.JSX.Element {
         return <ToolsPage />
       default:
         return (
-          <OverviewPage health={health} sources={sources} error={error} uptimeS={uptimeS} refresh={refresh} />
+          <OverviewPage
+            health={health}
+            sources={sources}
+            error={error}
+            uptimeS={uptimeS}
+            refresh={refresh}
+          />
         )
     }
   }
@@ -75,7 +81,9 @@ export function App(): React.JSX.Element {
               disabled={!item.ready}
             >
               {item.label}
-              {!item.ready ? <span className="nav-tag">{(item as { target?: string }).target}</span> : null}
+              {!item.ready ? (
+                <span className="nav-tag">{(item as { target?: string }).target}</span>
+              ) : null}
             </button>
           ))}
         </nav>

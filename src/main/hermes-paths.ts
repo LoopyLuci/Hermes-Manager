@@ -13,7 +13,10 @@ export function isHermesHome(dir: string): boolean {
  * Resolution order: explicit override > HERMES_HOME > known locations.
  * Returns null when nothing can be found; the first-run wizard then asks.
  */
-export function resolveHermesHome(_userDataDir: string, env: NodeJS.ProcessEnv = process.env): string | null {
+export function resolveHermesHome(
+  _userDataDir: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
   const override = readSettings().hermesHome
   if (override && isHermesHome(override)) return override
 
@@ -32,7 +35,9 @@ export function resolveHermesHome(_userDataDir: string, env: NodeJS.ProcessEnv =
 export function resolveHermesRepo(hermesHome: string | null): string | null {
   if (!hermesHome) return null
   const repo = join(hermesHome, 'hermes-agent')
-  return existsSync(join(repo, 'pyproject.toml')) || existsSync(join(repo, 'hermes_cli')) ? repo : null
+  return existsSync(join(repo, 'pyproject.toml')) || existsSync(join(repo, 'hermes_cli'))
+    ? repo
+    : null
 }
 
 /** Best-effort discovery used by the first-run wizard. */

@@ -33,7 +33,11 @@ body,
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
@@ -620,12 +624,29 @@ button.nav-item:disabled {
   border-color: currentColor;
 }
 
-.chip-debug.chip-active { color: var(--text-dim); background: var(--bg-raised); }
-.chip-info.chip-active { color: var(--accent); background: var(--accent-soft); }
-.chip-warning.chip-active { color: var(--amber); background: var(--amber-soft); }
-.chip-error.chip-active { color: var(--red); background: var(--red-soft); }
-.chip-critical.chip-active { color: var(--red); background: var(--red-soft); }
-.chip-clear { color: var(--text-faint); }
+.chip-debug.chip-active {
+  color: var(--text-dim);
+  background: var(--bg-raised);
+}
+.chip-info.chip-active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.chip-warning.chip-active {
+  color: var(--amber);
+  background: var(--amber-soft);
+}
+.chip-error.chip-active {
+  color: var(--red);
+  background: var(--red-soft);
+}
+.chip-critical.chip-active {
+  color: var(--red);
+  background: var(--red-soft);
+}
+.chip-clear {
+  color: var(--text-faint);
+}
 
 .log-viewport {
   background: var(--bg-panel);
@@ -666,11 +687,19 @@ button.nav-item:disabled {
   font-size: 10.5px;
 }
 
-.log-line-info .log-level { color: var(--accent); }
-.log-line-debug .log-level { color: var(--text-faint); }
-.log-line-warning .log-level { color: var(--amber); }
+.log-line-info .log-level {
+  color: var(--accent);
+}
+.log-line-debug .log-level {
+  color: var(--text-faint);
+}
+.log-line-warning .log-level {
+  color: var(--amber);
+}
 .log-line-error .log-level,
-.log-line-critical .log-level { color: var(--red); }
+.log-line-critical .log-level {
+  color: var(--red);
+}
 
 .log-logger {
   color: var(--text-dim);
@@ -977,13 +1006,31 @@ button.nav-item:disabled {
 }
 
 /* ---- config page ---- */
-.chip-debug { color: var(--text-dim); background: var(--bg-raised); }
-.chip-info { color: var(--accent); background: var(--accent-soft); }
-.chip-ok { color: var(--green); background: var(--green-soft); }
-.chip-warn { color: var(--amber); background: var(--amber-soft); }
-.chip-error { color: var(--red); background: var(--red-soft); }
+.chip-debug {
+  color: var(--text-dim);
+  background: var(--bg-raised);
+}
+.chip-info {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.chip-ok {
+  color: var(--green);
+  background: var(--green-soft);
+}
+.chip-warn {
+  color: var(--amber);
+  background: var(--amber-soft);
+}
+.chip-error {
+  color: var(--red);
+  background: var(--red-soft);
+}
 
-.page-config .toolbar { gap: 0.6rem; align-items: center; }
+.page-config .toolbar {
+  gap: 0.6rem;
+  align-items: center;
+}
 .change-count {
   font-size: 0.78rem;
   color: var(--text-dim);
@@ -992,18 +1039,36 @@ button.nav-item:disabled {
   border-radius: 999px;
   padding: 0.15rem 0.6rem;
 }
-.config-tabs { display: flex; gap: 0.4rem; }
-.config-search { min-width: 16rem; }
+.config-tabs {
+  display: flex;
+  gap: 0.4rem;
+}
+.config-search {
+  min-width: 16rem;
+}
 
-.field-grid { display: grid; gap: 0.5rem; }
+.field-grid {
+  display: grid;
+  gap: 0.5rem;
+}
 .field-row {
   display: grid;
   grid-template-columns: minmax(11rem, 18rem) minmax(12rem, 1fr) auto;
   gap: 0.6rem;
   align-items: center;
 }
-.field-label { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
-.field-path { font-size: 0.85rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.field-path {
+  font-size: 0.85rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .field-input {
   width: 100%;
   box-sizing: border-box;
@@ -1014,18 +1079,50 @@ button.nav-item:disabled {
   padding: 0.35rem 0.5rem;
   font-size: 0.85rem;
 }
-.field-input:focus { outline: 1px solid var(--accent); }
-textarea.field-input { resize: vertical; font-family: inherit; }
-.field-actions { display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end; }
-.field-error { color: var(--red); font-size: 0.75rem; }
-.field-deleted { opacity: 0.55; }
-.field-deleted .field-path { text-decoration: line-through; }
+.field-input:focus {
+  outline: 1px solid var(--accent);
+}
+textarea.field-input {
+  resize: vertical;
+  font-family: inherit;
+}
+.field-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+.field-error {
+  color: var(--red);
+  font-size: 0.75rem;
+}
+.field-deleted {
+  opacity: 0.55;
+}
+.field-deleted .field-path {
+  text-decoration: line-through;
+}
 
-.config-add-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; align-items: center; }
-.config-add-row .field-input { max-width: 18rem; }
+.config-add-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  align-items: center;
+}
+.config-add-row .field-input {
+  max-width: 18rem;
+}
 
-.diff-panel { border-color: var(--accent); }
-.diff-list { list-style: none; margin: 0.5rem 0; padding: 0; display: grid; gap: 0.35rem; }
+.diff-panel {
+  border-color: var(--accent);
+}
+.diff-list {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
 .diff-row {
   display: grid;
   grid-template-columns: auto minmax(10rem, 1fr) auto minmax(8rem, auto) auto minmax(8rem, auto);
@@ -1033,14 +1130,38 @@ textarea.field-input { resize: vertical; font-family: inherit; }
   align-items: center;
   font-size: 0.85rem;
 }
-.diff-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.diff-current { color: var(--red); text-decoration: line-through; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.diff-next { color: var(--green); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.diff-arrow { color: var(--text-dim); }
-.result-banner { border-color: var(--green); }
+.diff-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.diff-current {
+  color: var(--red);
+  text-decoration: line-through;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.diff-next {
+  color: var(--green);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.diff-arrow {
+  color: var(--text-dim);
+}
+.result-banner {
+  border-color: var(--green);
+}
 
 /* ------------------------------------------------------------------ tools page */
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
 .tab {
   background: var(--bg-raised);
   border: 1px solid var(--line-strong);
@@ -1050,10 +1171,35 @@ textarea.field-input { resize: vertical; font-family: inherit; }
   font-size: 12px;
   padding: 6px 14px;
 }
-.tab:hover { border-color: var(--accent); color: var(--text); }
-.tab-active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.tab-panel { display: flex; flex-direction: column; gap: 14px; }
-.button-small { font-size: 12px; padding: 4px 10px; }
-.table-actions { display: flex; gap: 6px; white-space: nowrap; }
-.pagination { display: flex; align-items: center; gap: 12px; padding-top: 10px; }
-.page-tools .panel-head .toolbar { flex-wrap: wrap; }
+.tab:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.tab-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.button-small {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+.table-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 10px;
+}
+.page-tools .panel-head .toolbar {
+  flex-wrap: wrap;
+}

@@ -26,8 +26,8 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: true,
       spellcheck: false,
-      webviewTag: false
-    }
+      webviewTag: false,
+    },
   })
 
   mainWindow.once('ready-to-show', () => mainWindow?.show())
@@ -50,11 +50,19 @@ function createWindow(): void {
 
 function registerIpc(): void {
   ipcMain.handle('bridge:info', () => bridge?.getState().info ?? null)
-  ipcMain.handle('bridge:state', () => bridge?.getState() ?? { status: 'stopped', info: null, lastError: null, health: null })
-  ipcMain.handle('bridge:start', () => bridge?.start() ?? Promise.reject(new Error('bridge not initialised')))
+  ipcMain.handle(
+    'bridge:state',
+    () => bridge?.getState() ?? { status: 'stopped', info: null, lastError: null, health: null },
+  )
+  ipcMain.handle(
+    'bridge:start',
+    () => bridge?.start() ?? Promise.reject(new Error('bridge not initialised')),
+  )
   ipcMain.handle('shell:open-external', (_event, url: string) => openExternal(url))
   ipcMain.handle('hermes:read-settings', () => readSettings())
-  ipcMain.handle('hermes:write-settings', (_event, patch: unknown) => updateSettings(patch && typeof patch === 'object' ? patch as ManagerSettings : {}))
+  ipcMain.handle('hermes:write-settings', (_event, patch: unknown) =>
+    updateSettings(patch && typeof patch === 'object' ? (patch as ManagerSettings) : {}),
+  )
   ipcMain.handle('hermes:detect', () => detectHermesHome())
   ipcMain.handle('hermes:pick', () => pickHermesHome())
   ipcMain.handle('hermes:restart-bridge', async () => {

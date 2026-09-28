@@ -23,7 +23,7 @@ interface BridgeReadyMessage {
 /** Locate a Python interpreter able to run the bridge, preferring Hermes's own. */
 export function findBridgePython(
   hermesHome: string | null,
-  env: NodeJS.ProcessEnv = process.env
+  env: NodeJS.ProcessEnv = process.env,
 ): { path: string; kind: 'hermes-venv' | 'store' } | null {
   if (hermesHome && existsSync(hermesHome)) {
     const installs = join(hermesHome, 'installs')
@@ -55,11 +55,16 @@ export class BridgeSupervisor extends EventEmitter {
   private child: ChildProcessByStdio<null, Readable, Readable> | null = null
   private stopping = false
   private restartAttempts = 0
-  private readonly state: BridgeState = { status: 'stopped', info: null, lastError: null, health: null }
+  private readonly state: BridgeState = {
+    status: 'stopped',
+    info: null,
+    lastError: null,
+    health: null,
+  }
 
   constructor(
     private readonly userDataDir: string,
-    private readonly env: NodeJS.ProcessEnv = process.env
+    private readonly env: NodeJS.ProcessEnv = process.env,
   ) {
     super()
   }
@@ -89,12 +94,14 @@ export class BridgeSupervisor extends EventEmitter {
     this.state.status = 'starting'
     this.state.lastError = null
 
-    const pythonPath = [dir, hermesRepo, this.env.PYTHONPATH].filter((entry): entry is string => Boolean(entry))
+    const pythonPath = [dir, hermesRepo, this.env.PYTHONPATH].filter((entry): entry is string =>
+      Boolean(entry),
+    )
     const child = spawn(runtime.path, args, {
       cwd: dir,
       env: { ...this.env, PYTHONPATH: pythonPath.join(';') },
       windowsHide: true,
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
     })
     this.child = child
 
@@ -128,7 +135,11 @@ export class BridgeSupervisor extends EventEmitter {
     if (trimmed.startsWith('HERMES_BRIDGE_READY ')) {
       const message = JSON.parse(trimmed.slice('HERMES_BRIDGE_READY '.length)) as BridgeReadyMessage
       this.state.status = 'ready'
-      this.state.info = { url: `http://127.0.0.1:${message.port}`, token: message.token, pid: message.pid }
+      this.state.info = {
+        url: `http://127.0.0.1:${message.port}`,
+        token: message.token,
+        pid: message.pid,
+      }
       this.emit('ready', this.state.info)
       return
     }
@@ -140,7 +151,9 @@ export class BridgeSupervisor extends EventEmitter {
       if (this.state.status === 'ready' && this.state.info) return resolve(this.state.info)
       const timer = setTimeout(() => {
         cleanup()
-        reject(new Error(`bridge did not become ready in 30s: ${this.state.lastError ?? 'no output'}`))
+        reject(
+          new Error(`bridge did not become ready in 30s: ${this.state.lastError ?? 'no output'}`),
+        )
       }, 30_000)
       const onReady = (info: BridgeInfo): void => {
         cleanup()
@@ -148,7 +161,11 @@ export class BridgeSupervisor extends EventEmitter {
       }
       const onExit = (code: number | null): void => {
         cleanup()
-        reject(new Error(`bridge exited before ready (code=${code}): ${this.state.lastError ?? 'unknown'}`))
+        reject(
+          new Error(
+            `bridge exited before ready (code=${code}): ${this.state.lastError ?? 'unknown'}`,
+          ),
+        )
       }
       const cleanup = (): void => {
         clearTimeout(timer)
@@ -169,7 +186,7 @@ export class BridgeSupervisor extends EventEmitter {
         if (this.stopping || this.child) return
         void this.start().catch(() => undefined)
       },
-      Math.min(1000 * 2 ** (this.restartAttempts - 1), 8000)
+      Math.min(1000 * 2 ** (this.restartAttempts - 1), 8000),
     )
   }
 

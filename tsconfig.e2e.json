@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "composite": false
+  },
+  "include": [
+    "tests/e2e/**/*",
+    "playwright.config.ts",
+    "electron.vite.config.ts",
+    "vitest.config.ts",
+    "src/shared/**/*"
+  ]
+}

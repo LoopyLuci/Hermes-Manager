@@ -38,7 +38,7 @@ import type {
   StreamEvent,
   UpdateApplyResult,
   UpdateCheckResult,
-  UpdateReport
+  UpdateReport,
 } from '@shared/protocol'
 
 const API_BASE = '/api/v1'
@@ -66,11 +66,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers: {
       ...(init.body ? { 'Content-Type': 'application/json' } : {}),
       ...init.headers,
-      Authorization: `Bearer ${info.token}`
-    }
+      Authorization: `Bearer ${info.token}`,
+    },
   })
   if (!response.ok) {
-    const body = (await response.json().catch(() => ({ detail: response.statusText }))) as { detail?: string }
+    const body = (await response.json().catch(() => ({ detail: response.statusText }))) as {
+      detail?: string
+    }
     throw new Error(body.detail ?? `request failed with ${response.status}`)
   }
   return (await response.json()) as T
@@ -88,7 +90,10 @@ export const bridgeApi = {
   gatewayFleet: (): Promise<FleetReport> => request<FleetReport>('/gateway/fleet'),
   processes: (): Promise<ProcessReport> => request<ProcessReport>('/processes'),
   gatewayLifecycle: (action: LifecycleAction): Promise<LifecycleResult> =>
-    request<LifecycleResult>('/gateway/lifecycle', { method: 'POST', body: JSON.stringify({ action }) }),
+    request<LifecycleResult>('/gateway/lifecycle', {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    }),
   gatewayDrain: (action: DrainAction): Promise<DrainResult> =>
     request<DrainResult>('/gateway/drain', { method: 'POST', body: JSON.stringify({ action }) }),
   sessions: (query?: string, limit = 50, offset = 0): Promise<SessionList> => {
@@ -96,9 +101,13 @@ export const bridgeApi = {
     if (query) params.set('q', query)
     return request<SessionList>(`/sessions?${params.toString()}`)
   },
-  sessionMessages: (sessionId: string, limit = 300, order: 'oldest' | 'latest' = 'oldest'): Promise<MessagePage> =>
+  sessionMessages: (
+    sessionId: string,
+    limit = 300,
+    order: 'oldest' | 'latest' = 'oldest',
+  ): Promise<MessagePage> =>
     request<MessagePage>(
-      `/sessions/${encodeURIComponent(sessionId)}/messages?limit=${limit}&order=${order}`
+      `/sessions/${encodeURIComponent(sessionId)}/messages?limit=${limit}&order=${order}`,
     ),
   config: (): Promise<ConfigDocument> => request<ConfigDocument>('/config'),
   configEnv: (): Promise<EnvReport> => request<EnvReport>('/config/env'),
@@ -112,22 +121,28 @@ export const bridgeApi = {
   applyUpdate: (branch?: string): Promise<UpdateApplyResult> =>
     request<UpdateApplyResult>('/updates/apply', {
       method: 'POST',
-      body: JSON.stringify({ branch: branch || null, yes: true })
+      body: JSON.stringify({ branch: branch || null, yes: true }),
     }),
   backups: (): Promise<BackupReport> => request<BackupReport>('/backups'),
   createBackup: (mode: 'snapshot' | 'full'): Promise<BackupCreateResult> =>
-    request<BackupCreateResult>('/backups/create', { method: 'POST', body: JSON.stringify({ mode }) }),
+    request<BackupCreateResult>('/backups/create', {
+      method: 'POST',
+      body: JSON.stringify({ mode }),
+    }),
   deleteBackup: (path: string): Promise<BackupDeleteResult> =>
-    request<BackupDeleteResult>('/backups/delete', { method: 'POST', body: JSON.stringify({ path }) }),
+    request<BackupDeleteResult>('/backups/delete', {
+      method: 'POST',
+      body: JSON.stringify({ path }),
+    }),
   previewConfigRestore: (path: string): Promise<ConfigRestorePreview> =>
     request<ConfigRestorePreview>('/backups/config/preview', {
       method: 'POST',
-      body: JSON.stringify({ path })
+      body: JSON.stringify({ path }),
     }),
   restoreConfig: (path: string): Promise<ConfigRestoreResult> =>
     request<ConfigRestoreResult>('/backups/config/restore', {
       method: 'POST',
-      body: JSON.stringify({ path })
+      body: JSON.stringify({ path }),
     }),
   mcpList: (): Promise<McpReport> => request<McpReport>('/tools/mcp'),
   mcpTest: (name: string): Promise<McpTestResult> =>
@@ -140,13 +155,13 @@ export const bridgeApi = {
   skillsToggle: (name: string, enable: boolean): Promise<SkillToggleResult> =>
     request<SkillToggleResult>('/tools/skills/toggle', {
       method: 'POST',
-      body: JSON.stringify({ name, enable })
+      body: JSON.stringify({ name, enable }),
     }),
   cronList: (): Promise<CronReport> => request<CronReport>('/tools/cron'),
   cronAction: (jobId: string, action: 'pause' | 'resume' | 'run'): Promise<CronActionResult> =>
     request<CronActionResult>('/tools/cron/action', {
       method: 'POST',
-      body: JSON.stringify({ job_id: jobId, action })
+      body: JSON.stringify({ job_id: jobId, action }),
     }),
   pluginsList: (): Promise<PluginReport> => request<PluginReport>('/tools/plugins'),
   modelsList: (): Promise<LocalModelsReport> => request<LocalModelsReport>('/tools/models'),
@@ -154,7 +169,7 @@ export const bridgeApi = {
   async chat(
     body: { text: string; session_id?: string | null; chat_id?: string },
     onEvent: (event: ChatEvent) => void,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<void> {
     const info = await bridgeInfo()
     if (!info) throw new Error('bridge is not ready')
@@ -162,10 +177,12 @@ export const bridgeApi = {
       method: 'POST',
       signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${info.token}` },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     })
     if (!response.ok || !response.body) {
-      const payload = (await response.json().catch(() => ({ detail: response.statusText }))) as { detail?: string }
+      const payload = (await response.json().catch(() => ({ detail: response.statusText }))) as {
+        detail?: string
+      }
       throw new Error(payload.detail ?? `chat failed with ${response.status}`)
     }
     const reader = response.body.getReader()
@@ -199,7 +216,10 @@ export const bridgeApi = {
     }
   },
   abortChat: (chatId: string): Promise<{ ok: boolean }> =>
-    request<{ ok: boolean }>('/chat/abort', { method: 'POST', body: JSON.stringify({ chat_id: chatId }) }),
+    request<{ ok: boolean }>('/chat/abort', {
+      method: 'POST',
+      body: JSON.stringify({ chat_id: chatId }),
+    }),
   async *events(): AsyncGenerator<StreamEvent> {
     const info = await bridgeInfo()
     if (!info) return
@@ -251,7 +271,7 @@ export const bridgeApi = {
       disposed = true
       socket?.close()
     }
-  }
+  },
 }
 
 export type { HealthReport, LogBatch, LogEntry, LogFile, SourceLayer, SourceStatus }

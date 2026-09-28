@@ -7,13 +7,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@renderer': resolve(__dirname, 'src/renderer/src'),
-      '@shared': resolve(__dirname, 'src/shared')
-    }
+      '@shared': resolve(__dirname, 'src/shared'),
+    },
   },
   test: {
     environment: 'jsdom',
     globals: true,
     include: ['tests/renderer/**/*.test.{ts,tsx}'],
-    setupFiles: ['tests/renderer/setup.ts']
-  }
+    setupFiles: ['tests/renderer/setup.ts'],
+  },
 })

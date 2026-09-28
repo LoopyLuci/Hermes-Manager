@@ -15,22 +15,27 @@ export function FirstRunWizard({
   error,
   onUseDetected,
   onPick,
-  onDismiss
+  onDismiss,
 }: WizardProps): React.JSX.Element {
   return (
     <div className="wizard-backdrop" role="dialog" aria-modal="true" aria-label="Locate Hermes">
       <div className="wizard">
         <h1>Locate your Hermes install</h1>
         <p className="wizard-copy">
-          Hermes Manager reads logs, state and configuration from a Hermes home directory. Pick the folder that
-          contains <code>hermes-agent</code>.
+          Hermes Manager reads logs, state and configuration from a Hermes home directory. Pick the
+          folder that contains <code>hermes-agent</code>.
         </p>
 
         {detected ? (
           <div className="wizard-detected">
             <span className="card-label">Detected</span>
             <code>{detected}</code>
-            <button type="button" className="button button-primary" onClick={onUseDetected} disabled={busy}>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={onUseDetected}
+              disabled={busy}
+            >
               {busy ? 'Starting…' : 'Use this location'}
             </button>
           </div>
@@ -107,6 +112,6 @@ export function useHermesWizard(): {
     error,
     useDetected: () => void apply(detected),
     pick: () => void window.hermes?.pickHermesHome?.().then((home) => apply(home)),
-    dismiss: () => setShow(false)
+    dismiss: () => setShow(false),
   }
 }

@@ -1,0 +1,9 @@
+dist/
+out/
+release/
+node_modules/
+.pytest-deps/
+package-lock.json
+test-results/
+playwright-report/
+coverage/

@@ -1,6 +1,6 @@
 import { app, dialog } from 'electron'
 import { join } from 'node:path'
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync } from 'node:fs'
 import { homedir } from 'node:os'
 
 const SETTINGS_FILE = 'hermes-manager-settings.json'
@@ -20,14 +20,19 @@ export function readSettings(): ManagerSettings {
     const raw = readFileSync(settingsPath(), 'utf8')
     const parsed = JSON.parse(raw)
     if (parsed && typeof parsed === 'object') return parsed as ManagerSettings
-  } catch { }
+  } catch {
+    // Missing/corrupt settings fall back to defaults below.
+  }
   return {}
 }
 
 export function writeSettings(settings: ManagerSettings): void {
-  const dir = join(app.getPath('userData'))
+  const dir = app.getPath('userData')
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  writeFileSync(settingsPath(), JSON.stringify(settings, null, 2), 'utf8')
+  const target = settingsPath()
+  const tmp = `${target}.tmp`
+  writeFileSync(tmp, JSON.stringify(settings, null, 2), 'utf8')
+  renameSync(tmp, target)
 }
 
 export function updateSettings(patch: Partial<ManagerSettings>): ManagerSettings {
@@ -42,7 +47,7 @@ export async function pickHermesHome(): Promise<string | null> {
     title: 'Select Hermes home directory',
     buttonLabel: 'Select',
     properties: ['openDirectory'],
-    defaultPath: homedir()
+    defaultPath: homedir(),
   })
   const chosen = filePaths[0]
   if (canceled || !chosen) return null

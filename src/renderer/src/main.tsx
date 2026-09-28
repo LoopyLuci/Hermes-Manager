@@ -9,5 +9,5 @@ if (!container) throw new Error('root element missing')
 createRoot(container).render(
   <StrictMode>
     <App />
-  </StrictMode>
+  </StrictMode>,
 )

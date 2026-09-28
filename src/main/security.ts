@@ -17,9 +17,10 @@ export function contentSecurityPolicy(): string {
     "connect-src 'self' ws://127.0.0.1:* http://127.0.0.1:*",
     "object-src 'none'",
     "base-uri 'none'",
-    "frame-ancestors 'none'"
+    "frame-ancestors 'none'",
   ]
-  if (isDev) directives.push("script-src 'self' 'unsafe-inline'", "connect-src 'self' ws://localhost:*")
+  if (isDev)
+    directives.push("script-src 'self' 'unsafe-inline'", "connect-src 'self' ws://localhost:*")
   return directives.join('; ')
 }
 
@@ -30,8 +31,8 @@ export function installSecurityPolicy(): void {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': [contentSecurityPolicy()]
-      }
+        'Content-Security-Policy': [contentSecurityPolicy()],
+      },
     })
   })
 
@@ -43,7 +44,8 @@ export function installSecurityPolicy(): void {
   ses.webRequest.onBeforeRequest({ urls: ['*://*/*'] }, (details, callback) => {
     if (details.resourceType === 'mainFrame') {
       const target = new URL(details.url)
-      const devServer = isDev && (target.hostname === 'localhost' || target.hostname === '127.0.0.1')
+      const devServer =
+        isDev && (target.hostname === 'localhost' || target.hostname === '127.0.0.1')
       if (!allowedSchemes.has(target.protocol) && !devServer) return callback({ cancel: true })
     }
     callback({})
@@ -52,7 +54,11 @@ export function installSecurityPolicy(): void {
 
 export async function openExternal(url: string): Promise<void> {
   const parsed = new URL(url)
-  if (parsed.protocol === 'https:' || parsed.protocol === 'http:' || parsed.protocol === 'mailto:') {
+  if (
+    parsed.protocol === 'https:' ||
+    parsed.protocol === 'http:' ||
+    parsed.protocol === 'mailto:'
+  ) {
     await shell.openExternal(url)
   }
 }

@@ -15,7 +15,7 @@ test.beforeAll(async () => {
   app = await _electron.launch({
     executablePath: electronBinary,
     args: [root],
-    env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: 'true' }
+    env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: 'true' },
   })
   page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
@@ -32,7 +32,11 @@ test('boots into the overview with a live bridge', async () => {
   let last = ''
   for (let i = 0; i < 30; i++) {
     last = await page.evaluate(async () =>
-      JSON.stringify(await (window as unknown as { hermes: { bridgeState: () => Promise<unknown> } }).hermes.bridgeState())
+      JSON.stringify(
+        await (
+          window as unknown as { hermes: { bridgeState: () => Promise<unknown> } }
+        ).hermes.bridgeState(),
+      ),
     )
     if (last.includes('"ready"')) break
     await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -45,7 +49,16 @@ test('boots into the overview with a live bridge', async () => {
 })
 
 test('navigates every section', async () => {
-  for (const section of ['logs', 'gateway', 'sessions', 'chat', 'config', 'updates', 'backups', 'tools']) {
+  for (const section of [
+    'logs',
+    'gateway',
+    'sessions',
+    'chat',
+    'config',
+    'updates',
+    'backups',
+    'tools',
+  ]) {
     await page.getByTestId(`nav-${section}`).click()
     await expect(page.getByTestId(`nav-${section}`)).toHaveAttribute('aria-current', 'page')
     await expect(page.locator('section.page h1').first()).toBeVisible()

@@ -10,18 +10,18 @@ export default defineConfig({
     resolve: {
       alias: {
         '@main': resolve('src/main'),
-        '@shared': resolve('src/shared')
-      }
-    }
+        '@shared': resolve('src/shared'),
+      },
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
         '@preload': resolve('src/preload'),
-        '@shared': resolve('src/shared')
-      }
-    }
+        '@shared': resolve('src/shared'),
+      },
+    },
   },
   renderer: {
     root: rendererRoot,
@@ -29,13 +29,13 @@ export default defineConfig({
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),
-        '@shared': resolve('src/shared')
-      }
+        '@shared': resolve('src/shared'),
+      },
     },
     server: {
       fs: {
-        allow: [resolve('.')]
-      }
-    }
-  }
+        allow: [resolve('.')],
+      },
+    },
+  },
 })

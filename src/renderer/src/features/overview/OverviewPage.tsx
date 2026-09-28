@@ -10,7 +10,7 @@ const DOMAIN_LABELS: Record<string, string> = {
   updates: 'Updates',
   backups: 'Backups',
   config: 'Config',
-  tools: 'Tools'
+  tools: 'Tools',
 }
 
 function formatDuration(totalSeconds: number): string {
@@ -28,7 +28,7 @@ export function OverviewPage({
   sources,
   error,
   uptimeS,
-  refresh
+  refresh,
 }: {
   health: HealthReport | null
   sources: SourceStatus | null
@@ -69,7 +69,9 @@ export function OverviewPage({
       <header className="page-head">
         <div>
           <h1>Overview</h1>
-          <p className="subtitle">Live telemetry and data-source health for {health.hermes_home ?? 'this install'}</p>
+          <p className="subtitle">
+            Live telemetry and data-source health for {health.hermes_home ?? 'this install'}
+          </p>
         </div>
         <button type="button" className="button" onClick={refresh}>
           Refresh
@@ -94,9 +96,12 @@ export function OverviewPage({
         <div className="card">
           <span className="card-label">Layers reachable</span>
           <span className="card-value">
-            {Object.values(health.layers).filter((layer) => layer.state !== 'unavailable').length} / 5
+            {Object.values(health.layers).filter((layer) => layer.state !== 'unavailable').length} /
+            5
           </span>
-          <span className="card-note">{health.ok ? 'all layers answering' : 'some layers degraded'}</span>
+          <span className="card-note">
+            {health.ok ? 'all layers answering' : 'some layers degraded'}
+          </span>
         </div>
       </div>
 
@@ -118,7 +123,9 @@ export function OverviewPage({
             {Object.entries(sources.domains ?? {}).map(([domain, layer]) => (
               <div className="domain-cell" key={domain} data-domain={domain}>
                 <span className="domain-name">{DOMAIN_LABELS[domain] ?? domain}</span>
-                <span className={`badge badge-${sources.layers[layer]?.state ?? 'unavailable'}`}>{layer}</span>
+                <span className={`badge badge-${sources.layers[layer]?.state ?? 'unavailable'}`}>
+                  {layer}
+                </span>
               </div>
             ))}
           </div>

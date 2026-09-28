@@ -46,7 +46,7 @@ for (const prop of ['offsetHeight', 'offsetWidth'] as const) {
     get(this: HTMLElement): number {
       if (this.classList?.contains('log-viewport')) return prop === 'offsetHeight' ? 700 : 1200
       return (descriptor?.get?.call(this) as number | undefined) ?? 0
-    }
+    },
   })
 }
 

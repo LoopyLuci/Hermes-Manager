@@ -5,7 +5,9 @@ import { bridgeApi } from '../../lib/bridge-api'
 function formatDate(value: string | null): string {
   if (!value) return '—'
   const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString().slice(0, 16).replace('T', ' ')
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : parsed.toISOString().slice(0, 16).replace('T', ' ')
 }
 
 function renderContent(content: ChatMessage['content']): string {
@@ -100,7 +102,8 @@ export function SessionsPage(): React.JSX.Element {
             >
               <span className="session-title">{session.title?.trim() || session.id}</span>
               <span className="session-meta">
-                {session.source ?? '—'} · {session.message_count ?? '?'} msgs · {formatDate(session.last_activity_at)}
+                {session.source ?? '—'} · {session.message_count ?? '?'} msgs ·{' '}
+                {formatDate(session.last_activity_at)}
                 {session.archived ? ' · archived' : ''}
               </span>
             </button>
