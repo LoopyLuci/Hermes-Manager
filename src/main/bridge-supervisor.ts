@@ -1,5 +1,6 @@
 import { spawn, type ChildProcessByStdio } from 'node:child_process'
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { EventEmitter } from 'node:events'
 import type { Readable } from 'node:stream'
@@ -16,8 +17,43 @@ export interface BridgeState {
 
 interface BridgeReadyMessage {
   port: number
+  pid: number
+}
+
+interface DiscoveryRecord {
+  url: string
   token: string
   pid: number
+}
+
+/** Where a running bridge advertises itself (see the bridge's control.py). */
+export function discoveryFile(env: NodeJS.ProcessEnv = process.env): string {
+  return join(env.HM_HOME?.trim() || join(homedir(), '.hermes-manager'), 'control.json')
+}
+
+/**
+ * A bridge that is already running (started headless by ABP, the MCP server or a script), if its discovery record
+ * is current: the pid that answers /api/v1/ping must be the one that wrote the file.
+ */
+export async function findRunningBridge(
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<DiscoveryRecord | null> {
+  let record: DiscoveryRecord
+  try {
+    record = JSON.parse(readFileSync(discoveryFile(env), 'utf8')) as DiscoveryRecord
+  } catch {
+    return null
+  }
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 2000)
+    const response = await fetch(`${record.url}/api/v1/ping`, { signal: controller.signal })
+    clearTimeout(timer)
+    const ping = (await response.json()) as { pid?: number }
+    return ping.pid === record.pid ? record : null
+  } catch {
+    return null
+  }
 }
 
 /** Locate a Python interpreter able to run the bridge, preferring Hermes's own. */
@@ -54,6 +90,9 @@ export function findBridgePython(
 export class BridgeSupervisor extends EventEmitter {
   private child: ChildProcessByStdio<null, Readable, Readable> | null = null
   private stopping = false
+  /** True when this app is using a bridge someone else started: it is left running when the app quits. */
+  private adopted = false
+  private token = ''
   private restartAttempts = 0
   private readonly state: BridgeState = {
     status: 'stopped',
@@ -77,6 +116,16 @@ export class BridgeSupervisor extends EventEmitter {
     if (this.state.status === 'ready' && this.state.info) return this.state.info
     if (this.child) return this.waitForReady()
 
+    const running = await findRunningBridge(this.env)
+    if (running) {
+      this.adopted = true
+      this.state.status = 'ready'
+      this.state.lastError = null
+      this.state.info = { url: running.url, token: running.token, pid: running.pid }
+      this.emit('ready', this.state.info)
+      return this.state.info
+    }
+
     const hermesHome = resolveHermesHome(this.userDataDir, this.env)
     const hermesRepo = resolveHermesRepo(hermesHome)
     const runtime = findBridgePython(hermesHome, this.env)
@@ -85,9 +134,11 @@ export class BridgeSupervisor extends EventEmitter {
       throw new Error(this.state.lastError ?? 'no python runtime')
     }
 
+    // The token goes through the environment, never the command line (which any process can read).
     const token = generateToken()
+    this.token = token
     const dir = bridgeDir()
-    const args = ['-m', 'hermes_manager_bridge', '--token', token]
+    const args = ['-m', 'hermes_manager_bridge', '--discovery', '--owner', 'app']
     if (hermesHome) args.push('--hermes-home', hermesHome)
     if (hermesRepo) args.push('--hermes-repo', hermesRepo)
 
@@ -99,7 +150,7 @@ export class BridgeSupervisor extends EventEmitter {
     )
     const child = spawn(runtime.path, args, {
       cwd: dir,
-      env: { ...this.env, PYTHONPATH: pythonPath.join(';') },
+      env: { ...this.env, PYTHONPATH: pythonPath.join(';'), HM_BRIDGE_TOKEN: token },
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     })
@@ -137,7 +188,7 @@ export class BridgeSupervisor extends EventEmitter {
       this.state.status = 'ready'
       this.state.info = {
         url: `http://127.0.0.1:${message.port}`,
-        token: message.token,
+        token: this.token,
         pid: message.pid,
       }
       this.emit('ready', this.state.info)
@@ -198,6 +249,13 @@ export class BridgeSupervisor extends EventEmitter {
 
   async stop(): Promise<void> {
     this.stopping = true
+    if (this.adopted) {
+      // Not ours to stop: another program started it and still uses it.
+      this.adopted = false
+      this.state.status = 'stopped'
+      this.state.info = null
+      return
+    }
     const child = this.child
     if (!child) {
       this.state.status = 'stopped'

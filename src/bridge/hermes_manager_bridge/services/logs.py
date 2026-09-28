@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..models import LogBatch, LogEntry, LogFile
+from ..models import LogEntry, LogFile
 from ..runtime import HermesRuntime
 
 LOG_LINE = re.compile(

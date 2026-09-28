@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { BridgeSupervisor } from './bridge-supervisor'
+import { Automation } from './automation'
 import { installSecurityPolicy, openExternal } from './security'
 import { pickHermesHome, readSettings, updateSettings, type ManagerSettings } from './settings'
 import { detectHermesHome } from './hermes-paths'
@@ -9,6 +10,7 @@ const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
 
 let mainWindow: BrowserWindow | null = null
 let bridge: BridgeSupervisor | null = null
+let automation: Automation | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -75,6 +77,12 @@ function registerIpc(): void {
 app.whenReady().then(async () => {
   installSecurityPolicy()
   bridge = new BridgeSupervisor(app.getPath('userData'))
+  // Remote control (MCP server, ABP, scripts): attach to every bridge this app gets, including after a restart.
+  automation = new Automation(
+    () => mainWindow,
+    () => bridge?.getState() ?? null,
+  )
+  bridge.on('ready', (info) => automation?.attach(info))
   bridge.on('log', (line: string) => mainWindow?.webContents.send('bridge:log', line))
   bridge.on('error', (err: string) => {
     mainWindow?.webContents.send('bridge:log', err)
@@ -102,6 +110,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', (event) => {
+  automation?.close()
   if (!bridge) return
   event.preventDefault()
   const instance = bridge

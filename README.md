@@ -102,12 +102,24 @@ Repository secrets used by the release workflow:
 | -------------------- | ----------------------------------------------------------------- |
 | `SIGNPATH_API_TOKEN` | SignPath API token (org/project ids configurable in the workflow) |
 
+## Driving it from other programs
+
+The bridge is the one way in, for the window and for everything else: an MCP server
+(`python -m hermes_manager_bridge.mcp`) offers every operation and every window operation as tools, and other programs
+(such as ABP) call `POST /api/v1/call/<operation>`. A running bridge advertises itself in
+`~/.hermes-manager/control.json`; the app reuses a bridge that is already running, and the window can be opened and
+driven remotely (sections, every element on screen, clicks, fields, selects, keys, screenshots). See
+[docs/control.md](docs/control.md).
+
 ## Security model
 
 - Bridge binds `127.0.0.1` on an ephemeral port with a per-launch 256-bit bearer token
-  passed via environment (never on the command line in packaged builds).
-- Auth is fail-closed: the bridge refuses to start without a token; every route and both
-  WebSocket endpoints verify it; OpenAPI/docs are disabled in production.
+  passed via the environment (`HM_BRIDGE_TOKEN`), never on the command line, and never printed.
+- Auth is fail-closed: a bridge without a token refuses every request; every route and every
+  WebSocket endpoint verify it; the public `/docs` and `/openapi.json` are off (the API description
+  is at `/api/v1/openapi.json`, behind the token). Only `/api/v1/ping` (pid and version) is public.
+- The discovery file that lets other programs find the bridge is readable only by its owner and
+  removed when the bridge stops.
 - Renderer runs with `contextIsolation`, `sandbox`, `nodeIntegration: false`, a strict CSP,
   and an origin allowlist on navigation/window-open.
 - Secrets in `.env` are masked in the UI; config writes are atomic and backed up before

@@ -71,3 +71,43 @@ test('log explorer loads the tail', async () => {
   await expect(page.getByTestId('log-viewport')).toBeVisible({ timeout: 30_000 })
   await expect(page.locator('text=agent.log').first()).toBeVisible()
 })
+
+test('can be driven from outside through the bridge', async () => {
+  // What the MCP server and ABP do: find the bridge from its discovery file and call the window's operations.
+  const { readFileSync } = await import('node:fs')
+  const { homedir } = await import('node:os')
+  const record = JSON.parse(
+    readFileSync(
+      join(process.env.HM_HOME ?? join(homedir(), '.hermes-manager'), 'control.json'),
+      'utf8',
+    ),
+  ) as { url: string; token: string }
+  const call = async (
+    op: string,
+    args: Record<string, unknown> = {},
+  ): Promise<Record<string, unknown>> => {
+    for (let i = 0; i < 20; i++) {
+      const r = await fetch(`${record.url}/api/v1/gui/${op}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${record.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(args),
+      })
+      if (r.status !== 409) return (await r.json()) as Record<string, unknown>
+      await new Promise((resolve) => setTimeout(resolve, 500)) // the window is still attaching
+    }
+    throw new Error('the window never attached')
+  }
+  const sections = (await call('sections')) as unknown as Array<{ section: string }>
+  expect(sections.map((s) => s.section)).toContain('backups')
+  await call('open', { section: 'backups' })
+  await expect(page.getByTestId('nav-backups')).toHaveAttribute('aria-current', 'page')
+  const found = (await call('find', { query: 'backup' })) as unknown as unknown[]
+  expect(found.length).toBeGreaterThan(0)
+  await call('click', { target: { id: 'nav-logs' } })
+  await expect(page.getByTestId('nav-logs')).toHaveAttribute('aria-current', 'page')
+  const shot = await call('screenshot', { max_width: 800 })
+  expect(shot.format).toBe('png')
+  expect(String(shot.base64).length).toBeGreaterThan(1000)
+  const state = await call('state')
+  expect(state.section).toBe('logs')
+})

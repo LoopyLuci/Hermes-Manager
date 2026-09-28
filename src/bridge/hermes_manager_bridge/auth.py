@@ -23,7 +23,7 @@ def verify_token(
 ) -> None:
     expected: str | None = getattr(request.app.state, "token", None)
     if not expected:
-        return
+        raise HTTPException(status_code=401, detail="the bridge has no token configured")
     presented = token or _bearer_value(authorization) or x_hermes_token
     if not presented or not secrets.compare_digest(presented, expected):
         raise HTTPException(status_code=401, detail="unauthorized")
@@ -32,7 +32,7 @@ def verify_token(
 def verify_websocket_token(websocket, token: str | None) -> bool:
     expected: str | None = getattr(websocket.app.state, "token", None)
     if not expected:
-        return True
+        return False
     presented = token or _bearer_value(websocket.headers.get("authorization"))
     if not presented:
         return False

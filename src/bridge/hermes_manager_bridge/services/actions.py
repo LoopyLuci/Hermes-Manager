@@ -5,7 +5,6 @@ import subprocess
 import sys
 import threading
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from ..runtime import HermesRuntime
