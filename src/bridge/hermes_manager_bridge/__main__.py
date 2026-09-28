@@ -72,7 +72,12 @@ async def _serve(app, token: str, port: int, discovery: bool, owner: str) -> int
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
-    token = os.environ.get("HM_BRIDGE_TOKEN", "").strip() or args.token or control.new_token()
+    token = (
+        os.environ.get("HM_BRIDGE_TOKEN", "").strip()
+        or os.environ.get("HERMES_BRIDGE_TOKEN", "").strip()  # legacy alias
+        or args.token
+        or control.new_token()
+    )
     runtime = resolve_runtime(args.hermes_home, args.hermes_repo)
     app = create_app(runtime=runtime, token=token)
     return asyncio.run(_serve(app, token, args.port, args.discovery, args.owner))

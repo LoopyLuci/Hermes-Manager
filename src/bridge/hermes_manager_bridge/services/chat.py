@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import queue
 import shutil
 import subprocess
 import threading
@@ -13,6 +14,9 @@ from ..runtime import HermesRuntime
 
 _ACTIVE: dict[str, subprocess.Popen] = {}
 _ACTIVE_LOCK = threading.Lock()
+
+#: Seconds without a single output line before the turn is considered hung.
+IDLE_TIMEOUT_S = float(os.environ.get("HERMES_BRIDGE_CHAT_IDLE_S", "120"))
 
 
 def build_chat_command(runtime: HermesRuntime, session_id: str | None = None) -> list[str] | None:
@@ -51,6 +55,23 @@ def abort_chat(chat_id: str) -> bool:
     except OSError:
         return False
     return True
+
+
+def terminate_active() -> None:
+    """Kill every in-flight chat child (bridge shutdown)."""
+    with _ACTIVE_LOCK:
+        procs = list(_ACTIVE.values())
+        _ACTIVE.clear()
+    for proc in procs:
+        if proc.poll() is None:
+            try:
+                proc.kill()
+            except OSError:
+                pass
+            try:
+                proc.wait(timeout=5)
+            except (subprocess.TimeoutExpired, OSError):
+                pass
 
 
 def _spawn(runtime: HermesRuntime, command: list[str]) -> subprocess.Popen:
@@ -112,7 +133,26 @@ def stream_chat(runtime: HermesRuntime, request: ChatRequest, chat_id: str | Non
             return
 
         assert proc.stdout is not None
-        for line in proc.stdout:
+        # Read on a worker thread so a silent child can never block the
+        # response generator forever: the consumer enforces an idle deadline.
+        lines: queue.Queue[str | None] = queue.Queue()
+        feed_thread = threading.Thread(target=_feed_lines, args=(proc.stdout, lines), daemon=True)
+        feed_thread.start()
+
+        while True:
+            try:
+                line = lines.get(timeout=IDLE_TIMEOUT_S)
+            except queue.Empty:
+                _kill_quiet(proc)
+                yield {
+                    "type": "manager.error",
+                    "detail": f"hermes produced no output for {IDLE_TIMEOUT_S:g}s and was killed",
+                    "stderr": list(stderr_tail),
+                }
+                finished = True
+                return
+            if line is None:
+                break
             line = line.strip()
             if not line:
                 continue
@@ -124,7 +164,17 @@ def stream_chat(runtime: HermesRuntime, request: ChatRequest, chat_id: str | Non
                 session_id = event["session_id"]
             yield event
 
-        proc.wait(timeout=30)
+        try:
+            proc.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            _kill_quiet(proc)
+            yield {
+                "type": "manager.error",
+                "detail": "hermes did not exit within 30s after its output stream closed; killed",
+                "stderr": list(stderr_tail),
+            }
+            finished = True
+            return
         exit_code = proc.returncode
         finished = True
         if exit_code not in (0, None) and stderr_tail:
@@ -144,6 +194,24 @@ def stream_chat(runtime: HermesRuntime, request: ChatRequest, chat_id: str | Non
                     pipe.close()
                 except OSError:
                     pass
+
+
+def _feed_lines(stream, sink: "queue.Queue[str | None]") -> None:  # type: ignore[no-untyped-def]
+    try:
+        for line in stream:
+            sink.put(line)
+    except (OSError, ValueError):
+        pass
+    finally:
+        sink.put(None)
+
+
+def _kill_quiet(proc: subprocess.Popen) -> None:
+    if proc.poll() is None:
+        try:
+            proc.kill()
+        except OSError:
+            pass
 
 
 def _drain_stderr(pipe, sink: deque) -> None:  # type: ignore[no-untyped-def]

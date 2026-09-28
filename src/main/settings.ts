@@ -35,6 +35,21 @@ export function writeSettings(settings: ManagerSettings): void {
   renameSync(tmp, target)
 }
 
+export function sanitizeSettingsPatch(raw: unknown): Partial<ManagerSettings> {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const input = raw as Record<string, unknown>
+  const out: Partial<ManagerSettings> = {}
+  if (typeof input.hermesHome === 'string' && input.hermesHome.length <= 1024)
+    out.hermesHome = input.hermesHome
+  if (input.theme === 'dark' || input.theme === 'light' || input.theme === 'system')
+    out.theme = input.theme
+  if (Array.isArray(input.recentPaths))
+    out.recentPaths = input.recentPaths
+      .filter((entry): entry is string => typeof entry === 'string' && entry.length <= 1024)
+      .slice(0, 10)
+  return out
+}
+
 export function updateSettings(patch: Partial<ManagerSettings>): ManagerSettings {
   const current = readSettings()
   const next = { ...current, ...patch }

@@ -1,7 +1,8 @@
-import { session, shell } from 'electron'
+import { app, session, shell } from 'electron'
 import { URL } from 'node:url'
 
-const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+/** Dev = unpackaged (vite dev server); packaged builds are always production. */
+const isDev = !app.isPackaged
 
 /**
  * Content security policy for the renderer. In dev the Vite HMR server must be

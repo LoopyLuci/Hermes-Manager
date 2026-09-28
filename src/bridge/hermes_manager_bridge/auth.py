@@ -15,6 +15,14 @@ def _bearer_value(authorization: str | None) -> str | None:
     return None
 
 
+def _matches(presented: str, expected: str) -> bool:
+    """Constant-time compare that never raises on odd encodings."""
+    try:
+        return secrets.compare_digest(presented.encode("utf-8"), expected.encode("utf-8"))
+    except (UnicodeEncodeError, TypeError, ValueError):
+        return False
+
+
 def verify_token(
     request: Request,
     authorization: Annotated[str | None, Header()] = None,
@@ -23,9 +31,11 @@ def verify_token(
 ) -> None:
     expected: str | None = getattr(request.app.state, "token", None)
     if not expected:
+        # Fail closed: an unconfigured token means the bridge is misconfigured,
+        # never that the API is open.
         raise HTTPException(status_code=401, detail="the bridge has no token configured")
     presented = token or _bearer_value(authorization) or x_hermes_token
-    if not presented or not secrets.compare_digest(presented, expected):
+    if not presented or not _matches(presented, expected):
         raise HTTPException(status_code=401, detail="unauthorized")
 
 
@@ -36,4 +46,4 @@ def verify_websocket_token(websocket, token: str | None) -> bool:
     presented = token or _bearer_value(websocket.headers.get("authorization"))
     if not presented:
         return False
-    return secrets.compare_digest(presented, expected)
+    return _matches(presented, expected)

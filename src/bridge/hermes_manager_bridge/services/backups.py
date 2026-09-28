@@ -18,7 +18,7 @@ from ..models import (
 )
 from ..runtime import HermesRuntime
 from .actions import ActionError, spawn_detached
-from .config import ConfigError, _atomic_write, _backup, _load_yaml_document
+from .config import CONFIG_LOCK, ConfigError, _atomic_write, _backup, _load_yaml_document
 
 BACKUP_LOG = "manager-backup.log"
 
@@ -266,17 +266,20 @@ def restore_config(runtime: HermesRuntime, raw: str) -> ConfigRestoreResult:
         return ConfigRestoreResult(ok=False, backup=str(target), detail="HERMES_HOME is unknown")
 
     created_backup: Path | None = None
-    if config_path.is_file():
-        created_backup = _backup(config_path)
-    try:
-        _atomic_write(config_path, text)
-    except OSError as exc:
-        return ConfigRestoreResult(
-            ok=False,
-            backup=str(target),
-            created_backup=str(created_backup) if created_backup else None,
-            detail=f"write failed: {exc}",
-        )
+    # Serialize with config apply/toggle so a restore can never interleave a
+    # partial write with another mutation.
+    with CONFIG_LOCK:
+        if config_path.is_file():
+            created_backup = _backup(config_path)
+        try:
+            _atomic_write(config_path, text)
+        except OSError as exc:
+            return ConfigRestoreResult(
+                ok=False,
+                backup=str(target),
+                created_backup=str(created_backup) if created_backup else None,
+                detail=f"write failed: {exc}",
+            )
     return ConfigRestoreResult(
         ok=True,
         backup=str(target),

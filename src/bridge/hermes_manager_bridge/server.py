@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -26,6 +28,8 @@ from .routes.tools import router as tools_router
 from .routes.updates import router as updates_router
 from .runtime import HermesRuntime, resolve_runtime
 from .services.health import build_health, build_source_status
+
+logger = logging.getLogger("hermes_manager_bridge")
 
 api_router = APIRouter(prefix="/api/v1", dependencies=[Depends(verify_token)])
 ws_router = APIRouter(prefix="/api/v1")
@@ -121,6 +125,15 @@ async def stream(websocket: WebSocket, token: Annotated[str | None, Query()] = N
         return
 
 
+@asynccontextmanager
+async def lifespan(_app: FastAPI):  # type: ignore[no-untyped-def]
+    yield
+    # Bridge shutdown must not orphan interactive chat children.
+    from .services.chat import terminate_active
+
+    terminate_active()
+
+
 def create_app(runtime: HermesRuntime | None = None, token: str | None = None) -> FastAPI:
     resolved = runtime or resolve_runtime()
     app = FastAPI(
@@ -128,6 +141,7 @@ def create_app(runtime: HermesRuntime | None = None, token: str | None = None) -
         version=__version__,
         description="Local control-plane API in front of a Hermes install.",
         responses={401: {"model": ErrorBody}},
+        lifespan=lifespan,
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
@@ -153,7 +167,10 @@ def create_app(runtime: HermesRuntime | None = None, token: str | None = None) -
     app.include_router(tools_router)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        # The renderer runs from file:// (Origin "null"); dev loads from
+        # localhost. A token is always required, this is defence in depth.
+        allow_origins=["null"],
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -161,7 +178,9 @@ def create_app(runtime: HermesRuntime | None = None, token: str | None = None) -
     )
 
     @app.exception_handler(Exception)
-    async def unhandled(_request: Request, exc: Exception) -> JSONResponse:
-        return JSONResponse(status_code=500, content={"detail": f"{type(exc).__name__}: {exc}"})
+    async def unhandled(request: Request, exc: Exception) -> JSONResponse:
+        # Full detail goes to the bridge log (stderr), never to the client.
+        logger.exception("unhandled error on %s %s", request.method, request.url.path)
+        return JSONResponse(status_code=500, content={"detail": "internal server error"})
 
     return app
