@@ -20,6 +20,9 @@
     "test:e2e": "playwright test",
     "test:bridge": "pwsh -NoProfile -File scripts/verify.ps1 -BridgeOnly",
     "verify": "pwsh -NoProfile -File scripts/verify.ps1",
+    "pipeline": "node scripts/pipeline.mjs",
+    "pipeline:full": "node scripts/pipeline.mjs --full",
+    "hooks:install": "node scripts/install-hooks.mjs",
     "dist": "npm run typecheck && electron-vite build && electron-builder --win nsis zip",
     "dist:nsis": "npm run typecheck && electron-vite build && electron-builder --win nsis",
     "dist:portable": "npm run typecheck && electron-vite build && electron-builder --win zip"

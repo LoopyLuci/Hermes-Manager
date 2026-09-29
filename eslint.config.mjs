@@ -65,6 +65,7 @@ export default tseslint.config(
   },
   {
     files: ['scripts/**/*.mjs', '*.config.{ts,mjs}', 'tests/e2e/**/*.ts'],
+    languageOptions: { globals: { ...globals.node } },
     rules: { 'no-console': 'off' },
   },
   {

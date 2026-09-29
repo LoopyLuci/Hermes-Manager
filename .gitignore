@@ -26,3 +26,8 @@ bridge.err
 .env
 .DS_Store
 Thumbs.db
+
+# Local CI/CD pipeline (scripts/pipeline.mjs): its logs, reports and lock
+logs/pipeline/
+reports/pipeline/
+.pipeline.lock
