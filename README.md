@@ -13,6 +13,28 @@ cron jobs, plugins, local models) — all in one Electron app.
 
 > _Place screenshots in `docs/` and reference them here._
 
+## Download
+
+Windows x64 builds are published on the
+[releases page](https://github.com/LoopyLuci/Hermes-Manager/releases):
+
+| Asset                             | What it is                                                                |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| `HermesManager-<version>-x64.exe` | NSIS installer (choose install directory, desktop + Start Menu shortcuts) |
+| `HermesManager-<version>-x64.zip` | Portable build, runs without installing                                   |
+
+Verify a download before you run it:
+
+```powershell
+# provenance: was this exact file built by this repository's release workflow?
+gh attestation verify .\HermesManager-0.1.0-x64.zip -R LoopyLuci/Hermes-Manager
+# Windows publisher (present once SignPath code signing is active):
+Get-AuthenticodeSignature .\HermesManager-0.1.0-x64.exe | Select-Object Status
+```
+
+Requires Windows 10/11 x64. The app needs a local Hermes installation to
+connect to; see [Getting started](#getting-started).
+
 ## Features
 
 | Area         | What it does                                                                                     |
