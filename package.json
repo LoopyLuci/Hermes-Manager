@@ -27,9 +27,9 @@
     "pipeline": "node scripts/pipeline.mjs",
     "pipeline:full": "node scripts/pipeline.mjs --full",
     "hooks:install": "node scripts/install-hooks.mjs",
-    "dist": "npm run typecheck && electron-vite build && electron-builder --win nsis zip",
-    "dist:nsis": "npm run typecheck && electron-vite build && electron-builder --win nsis",
-    "dist:portable": "npm run typecheck && electron-vite build && electron-builder --win zip"
+    "dist": "npm run typecheck && electron-vite build && electron-builder --win nsis zip --publish never",
+    "dist:nsis": "npm run typecheck && electron-vite build && electron-builder --win nsis --publish never",
+    "dist:portable": "npm run typecheck && electron-vite build && electron-builder --win zip --publish never"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.13",

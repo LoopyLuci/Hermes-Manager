@@ -90,7 +90,7 @@ jobs:
           }
 
       - name: Package unpacked directory
-        run: npx electron-builder --win dir
+        run: npx electron-builder --win dir --publish never
 
       # ---- signing, part 1: the binaries that end up inside the install ----
       # SignPath's trusted-build integration requires the artifact to be a
@@ -117,7 +117,7 @@ jobs:
           output-artifact-directory: dist/win-unpacked
 
       - name: Build installer and portable zip from the signed directory
-        run: npx electron-builder --win nsis zip --prepackaged dist/win-unpacked
+        run: npx electron-builder --win nsis zip --prepackaged dist/win-unpacked --publish never
 
       # ---- signing, part 2: the installer the user actually downloads ----
       - name: Upload unsigned installer
