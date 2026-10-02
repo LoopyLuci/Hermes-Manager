@@ -37,7 +37,9 @@ function Get-HermesManagerRuntime {
 function Get-PythonWithPip {
     param($FallbackRuntime)
     if ($FallbackRuntime.Path) {
-        & $FallbackRuntime.Path -m pip --version 2>$null
+        # Out-Null: pip's version banner must never leak into this function's
+        # return value, or callers get an array instead of the runtime object.
+        & $FallbackRuntime.Path -m pip --version *> $null
         if ($LASTEXITCODE -eq 0) { return $FallbackRuntime }
     }
     $hermesHome = Get-HermesHome
