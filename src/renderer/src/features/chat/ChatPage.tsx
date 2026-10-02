@@ -12,6 +12,13 @@ function newChatId(): string {
   return `chat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+const MAX_TRANSCRIPT = 500
+
+function appendEntry(current: Entry[], entry: Entry): Entry[] {
+  const next = [...current, entry]
+  return next.length > MAX_TRANSCRIPT ? next.slice(next.length - MAX_TRANSCRIPT) : next
+}
+
 export function ChatPage(): React.JSX.Element {
   const [entries, setEntries] = useState<Entry[]>([])
   const [draft, setDraft] = useState('')
@@ -50,10 +57,13 @@ export function ChatPage(): React.JSX.Element {
         break
       }
       case 'tool_use':
-        setEntries((current) => [
-          ...current,
-          { kind: 'tool', name: String(event.name ?? 'tool'), detail: 'running…' },
-        ])
+        setEntries((current) =>
+          appendEntry(current, {
+            kind: 'tool',
+            name: String(event.name ?? 'tool'),
+            detail: 'running…',
+          }),
+        )
         break
       case 'tool_result':
         setEntries((current) => {
@@ -74,10 +84,12 @@ export function ChatPage(): React.JSX.Element {
         break
       case 'result': {
         const finalText = typeof event.text === 'string' ? event.text : ''
-        setEntries((current) => [
-          ...current,
-          { kind: 'assistant', text: finalText || (liveTextRef.current ?? '') },
-        ])
+        setEntries((current) =>
+          appendEntry(current, {
+            kind: 'assistant',
+            text: finalText || (liveTextRef.current ?? ''),
+          }),
+        )
         setLiveText(null)
         const resolved =
           typeof event.session_id === 'string' && event.session_id ? event.session_id : null
@@ -92,10 +104,9 @@ export function ChatPage(): React.JSX.Element {
         break
       case 'manager.error':
         setError(String(event.detail ?? 'chat failed'))
-        setEntries((current) => [
-          ...current,
-          { kind: 'notice', text: String(event.detail ?? 'chat failed') },
-        ])
+        setEntries((current) =>
+          appendEntry(current, { kind: 'notice', text: String(event.detail ?? 'chat failed') }),
+        )
         break
       default:
         break
@@ -113,7 +124,7 @@ export function ChatPage(): React.JSX.Element {
     setError(null)
     setBusy(true)
     setLiveText('')
-    setEntries((current) => [...current, { kind: 'user', text }])
+    setEntries((current) => appendEntry(current, { kind: 'user', text }))
     const controller = new AbortController()
     abortRef.current = controller
     try {
@@ -126,7 +137,7 @@ export function ChatPage(): React.JSX.Element {
       if (!controller.signal.aborted) {
         const message = cause instanceof Error ? cause.message : String(cause)
         setError(message)
-        setEntries((current) => [...current, { kind: 'notice', text: message }])
+        setEntries((current) => appendEntry(current, { kind: 'notice', text: message }))
       }
     } finally {
       // Only the still-current turn may reset shared state; a newer send may
@@ -145,7 +156,7 @@ export function ChatPage(): React.JSX.Element {
     void bridgeApi.abortChat(chatIdRef.current).catch(() => undefined)
     setBusy(false)
     setLiveText(null)
-    setEntries((current) => [...current, { kind: 'notice', text: 'stopped' }])
+    setEntries((current) => appendEntry(current, { kind: 'notice', text: 'stopped' }))
   }
 
   const reset = (): void => {

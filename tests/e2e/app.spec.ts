@@ -15,7 +15,12 @@ test.beforeAll(async () => {
   app = await _electron.launch({
     executablePath: electronBinary,
     args: [root],
-    env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: 'true' },
+    env: {
+      ...process.env,
+      ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
+      // Close-to-tray off so Playwright teardown always terminates the app.
+      HM_E2E: '1',
+    },
   })
   page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')

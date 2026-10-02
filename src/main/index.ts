@@ -1,18 +1,20 @@
 import { app, BrowserWindow, ipcMain, screen, Notification, type IpcMainInvokeEvent } from 'electron'
 import { join } from 'node:path'
 import { BridgeSupervisor } from './bridge-supervisor'
-import { Automation } from './automation'
 import { installSecurityPolicy, openExternal } from './security'
-import { pickHermesHome, readSettings, sanitizeSettingsPatch, updateSettings } from './settings'
+import {
+  pickHermesHome,
+  readSettings,
+  sanitizeSettingsPatch,
+  updateSettings,
+} from './settings'
 import { detectHermesHome } from './hermes-paths'
 import { createTray, destroyTray, isQuitting, markQuitting } from './tray'
-import { checkForAppUpdate, initAppUpdater, installAppUpdate } from './app-updater'
 
 const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
 
 let mainWindow: BrowserWindow | null = null
 let bridge: BridgeSupervisor | null = null
-let automation: Automation | null = null
 let rendererCrashCount = 0
 let lastBridgeNotifyAt = 0
 let bridgeEverFailed = false
@@ -52,7 +54,8 @@ function persistBounds(window: BrowserWindow): void {
   boundsTimer = setTimeout(() => {
     boundsTimer = null
     if (!window || window.isDestroyed() || window.isMinimized() || !window.isVisible()) return
-    updateSettings({ windowBounds: window.getBounds() })
+    const bounds = window.getBounds()
+    updateSettings({ windowBounds: bounds })
   }, 600)
 }
 
@@ -147,14 +150,6 @@ function registerIpc(): void {
     await bridge.stop()
     return bridge.start()
   })
-  ipcMain.handle('app:check-update', (event) => {
-    assertTrustedSender(event)
-    return checkForAppUpdate()
-  })
-  ipcMain.handle('app:install-update', (event) => {
-    assertTrustedSender(event)
-    return installAppUpdate()
-  })
 }
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock()
@@ -173,14 +168,7 @@ if (!gotSingleInstanceLock) {
   app.whenReady().then(async () => {
     app.setAppUserModelId('com.hermes.manager')
     installSecurityPolicy()
-    initAppUpdater({ onLog: (line: string) => mainWindow?.webContents.send('bridge:log', line) })
     bridge = new BridgeSupervisor(app.getPath('userData'))
-    // Remote control (MCP server, ABP, scripts): attach to every bridge this app gets, including after a restart.
-    automation = new Automation(
-      () => mainWindow,
-      () => bridge?.getState() ?? null,
-    )
-    bridge.on('ready', (info) => automation?.attach(info))
     bridge.on('log', (line: string) => mainWindow?.webContents.send('bridge:log', line))
     bridge.on('error', (error: Error) => {
       const message = error instanceof Error ? error.message : String(error)
@@ -242,18 +230,14 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', (event) => {
   markQuitting()
-  automation?.close()
   if (!bridge) return
   event.preventDefault()
   const instance = bridge
   bridge = null
-  void instance
-    .stop()
-    .catch(() => undefined)
-    .finally(() => {
-      destroyTray()
-      app.quit()
-    })
+  void instance.stop().finally(() => {
+    destroyTray()
+    app.quit()
+  })
 })
 
 app.on('web-contents-created', (_event, contents) => {

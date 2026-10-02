@@ -9,6 +9,7 @@ export interface ManagerSettings {
   hermesHome?: string
   theme?: 'dark' | 'light' | 'system'
   recentPaths?: string[]
+  windowBounds?: { x: number; y: number; width: number; height: number }
 }
 
 export function settingsPath(): string {
@@ -47,6 +48,19 @@ export function sanitizeSettingsPatch(raw: unknown): Partial<ManagerSettings> {
     out.recentPaths = input.recentPaths
       .filter((entry): entry is string => typeof entry === 'string' && entry.length <= 1024)
       .slice(0, 10)
+  const bounds = input.windowBounds
+  if (bounds && typeof bounds === 'object' && !Array.isArray(bounds)) {
+    const record = bounds as Record<string, unknown>
+    const numbers = ['x', 'y', 'width', 'height'].map((key) => record[key])
+    if (numbers.every((value) => typeof value === 'number' && Number.isFinite(value))) {
+      out.windowBounds = {
+        x: numbers[0] as number,
+        y: numbers[1] as number,
+        width: numbers[2] as number,
+        height: numbers[3] as number,
+      }
+    }
+  }
   return out
 }
 

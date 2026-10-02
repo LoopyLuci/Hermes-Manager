@@ -30,9 +30,7 @@
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.13",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "react-router-dom": "^7.18.4",
-    "zustand": "^5.0.15"
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

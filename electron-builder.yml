@@ -11,9 +11,9 @@ extraResources:
     to: app/src/bridge
     filter:
       - '**/*.py'
+  - from: build/icon.png
+    to: build/icon.png
 asar: true
-asarUnpack:
-  - '**/src/bridge/**'
 win:
   icon: build/icon.ico
   target:
@@ -21,7 +21,7 @@ win:
       arch: [x64]
     - target: zip
       arch: [x64]
-  artifactName: ${productName}-${version}-${arch}.${ext}
+  artifactName: HermesManager-${version}-${arch}.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
