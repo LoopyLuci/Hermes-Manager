@@ -147,7 +147,8 @@ approves each signing request in SignPath before the certificate is used.
   ([`LoopyLuci`](https://github.com/LoopyLuci?tab=repositories))
 - Signing policy: `release-signing` – GitHub-hosted runners, origin verified
   against this repository, one approval per release
-- Setup, secrets and troubleshooting: [docs/signing.md](docs/signing.md)
+- Setup, secrets and troubleshooting: [docs/signing.md](docs/signing.md) ·
+  application text: [docs/signpath-application.md](docs/signpath-application.md)
 
 SignPath is a build service: it receives the binary you upload and the origin
 metadata GitHub attaches to it. This program sends nothing else to any network
