@@ -25,6 +25,10 @@ if (-not $RendererOnly) {
 }
 
 if (-not $BridgeOnly) {
+    Write-Host '== signing flow (mock SignPath) ==' -ForegroundColor Cyan
+    pwsh -NoProfile -File (Join-Path $PSScriptRoot 'test-sign-flow.ps1')
+    if ($LASTEXITCODE -ne 0) { $failures += 'signing flow' }
+
     Write-Host '== typecheck ==' -ForegroundColor Cyan
     npm run typecheck --silent
     if ($LASTEXITCODE -ne 0) { $failures += 'typecheck' }

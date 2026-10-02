@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Hermes Manager - the control center for Hermes: telemetry, logs, updates, backups, config, sessions and tools.",
   "author": "Hermes Manager",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true,
   "main": "out/main/index.js",
   "scripts": {
@@ -22,6 +22,7 @@
     "verify": "pwsh -NoProfile -File scripts/verify.ps1",
     "verify:full": "pwsh -NoProfile -File scripts/verify.ps1 -E2E",
     "sign": "pwsh -NoProfile -File scripts/sign.ps1",
+    "test:sign": "pwsh -NoProfile -File scripts/test-sign-flow.ps1",
     "ci:install": "pwsh -NoProfile -File scripts/ci-install.ps1",
     "pipeline": "node scripts/pipeline.mjs",
     "pipeline:full": "node scripts/pipeline.mjs --full",

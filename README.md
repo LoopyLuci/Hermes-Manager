@@ -133,6 +133,31 @@ The local pipeline (above) runs all three, plus lint, typecheck, a production bu
 `latest.yml` is what the in-app updater (electron-updater, GitHub provider)
 polls, so a release is installable from the Updates page with one click.
 
+### Code signing policy
+
+Free code signing is provided by [SignPath.io](https://signpath.io/), with a
+certificate issued to the SignPath Foundation. Every release is submitted by
+the GitHub Actions release workflow as a trusted build (origin verification:
+repository, branch, commit and runner are supplied by GitHub), and a human
+approves each signing request in SignPath before the certificate is used.
+
+- Committers and reviewers: the maintainers of
+  [`LoopyLuci/Hermes-Manager`](https://github.com/LoopyLuci/Hermes-Manager)
+- Approvers: repository owners
+  ([`LoopyLuci`](https://github.com/LoopyLuci?tab=repositories))
+- Signing policy: `release-signing` – GitHub-hosted runners, origin verified
+  against this repository, one approval per release
+- Setup, secrets and troubleshooting: [docs/signing.md](docs/signing.md)
+
+SignPath is a build service: it receives the binary you upload and the origin
+metadata GitHub attaches to it. This program sends nothing else to any network
+system. No analytics or telemetry leave the machine unless you explicitly enable
+a tool that does so.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
 Repository secrets/variables used by the release workflow:
 
 | Name                            | Kind     | Purpose                                    |
@@ -144,8 +169,10 @@ Repository secrets/variables used by the release workflow:
 | `SIGNPATH_ARTIFACT_CONFIG_SLUG` | variable | Optional artifact configuration            |
 
 Without `SIGNPATH_API_TOKEN` the signing steps are skipped and the workflow
-publishes **unsigned** artifacts with an explicit warning; once the secret
-exists the same workflow signs everything and hard-fails on a bad signature.
+refuses to publish unless `ALLOW_UNSIGNED_RELEASE=true` is set explicitly (the
+first release must exist before SignPath approves the project). With the
+secret present, every shipped binary is signed and a bad signature fails the
+run. See [docs/signing.md](docs/signing.md) for the full onboarding checklist.
 
 ## Driving it from other programs
 
@@ -180,8 +207,5 @@ src/shared/     protocol types shared by main/renderer
 src/bridge/     FastAPI bridge (routes/, services/, sources/)
 tests/          bridge (pytest), renderer (vitest), e2e (playwright)
 scripts/        verify.ps1, dev helpers, icon generator
+docs/           signing.md (code signing policy and setup)
 ```
-
-## License
-
-UNLICENSED — all rights reserved.

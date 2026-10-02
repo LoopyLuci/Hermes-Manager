@@ -23,13 +23,15 @@ param(
     [string] $ProjectSlug = $env:SIGNPATH_PROJECT_SLUG,
     [string] $SigningPolicySlug = $env:SIGNPATH_SIGNING_POLICY_SLUG,
     [string] $ArtifactConfigurationSlug = $env:SIGNPATH_ARTIFACT_CONFIG_SLUG,
+    [string] $ApiUrl = $(if ($env:SIGNPATH_API_URL) { $env:SIGNPATH_API_URL } else { 'https://app.signpath.io' }),
     [int] $TimeoutSeconds = 900,
     [int] $PollSeconds = 10,
-    [switch] $Required
+    [switch] $Required,
+    [switch] $SkipSignatureValidation
 )
 
 $ErrorActionPreference = 'Stop'
-$apiBase = "https://app.signpath.io/Api/v1/$OrganizationId"
+$apiBase = "$($ApiUrl.TrimEnd('/'))/Api/v1/$OrganizationId"
 $headers = @{ Authorization = "Bearer $ApiToken" }
 
 $targets = @(Get-ChildItem -Path $Path -File -ErrorAction SilentlyContinue)
@@ -98,13 +100,14 @@ foreach ($target in $targets) {
     $signed = Join-Path $env:TEMP "$($target.Name).signed"
     Invoke-WebRequest -Uri "$apiBase/SigningRequests/$id/SignedArtifact" -Headers $headers -OutFile $signed
     Move-Item -LiteralPath $signed -Destination $target.FullName -Force
-    Write-Host "   signed artifact replaced $target.Name" -ForegroundColor Green
+    Write-Host "   signed artifact replaced $($target.Name)" -ForegroundColor Green
 
     $signature = Get-AuthenticodeSignature -LiteralPath $target.FullName
-    if ($signature.Status -ne 'Valid') {
+    if ($signature.Status -ne 'Valid' -and -not $SkipSignatureValidation) {
         throw "Authenticode validation failed for $($target.Name): $($signature.Status)"
     }
     Write-Host "   signature $($signature.Status) / $($signature.SignerCertificate.Subject)" -ForegroundColor Green
 }
 
 Write-Host 'sign: OK' -ForegroundColor Green
+exit 0

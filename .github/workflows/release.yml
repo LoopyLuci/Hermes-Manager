@@ -14,13 +14,15 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: read
   contents: write
 
 jobs:
   release:
     name: Verify, package, sign and publish
     runs-on: windows-latest
-    timeout-minutes: 90
+    # Signing waits for a human approval in SignPath, so allow generous time.
+    timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v4
@@ -71,38 +73,103 @@ jobs:
         env:
           HM_E2E: '1'
 
-      # ---- packaging ----
+      # ---- is SignPath configured? (secrets may not be used in `if:`) ----
+      - name: Detect signing configuration
+        id: signing
+        shell: pwsh
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        run: |
+          $configured = [bool]$env:SIGNPATH_API_TOKEN
+          "configured=$configured" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          if ($configured) {
+            'SignPath configured: every artifact will be signed (approval required).'
+          } else {
+            "SignPath is not configured. Set the SIGNPATH_API_TOKEN secret (see docs/signing.md)."
+            "An unsigned release also needs the ALLOW_UNSIGNED_RELEASE variable set to 'true'."
+          }
+
       - name: Package unpacked directory
         run: npx electron-builder --win dir
 
-      # ---- signing (SignPath, free for open source) ----
-      # No step-level `if:` on secrets (GitHub rejects it and invalidates the
-      # whole workflow file). scripts/sign.ps1 is strict whenever SignPath is
-      # configured and warns + ships unsigned when it is not.
-      - name: Sign unpacked binaries
-        shell: pwsh
-        run: pwsh -NoProfile -File scripts/sign.ps1 -Path 'dist/win-unpacked/*.exe'
+      # ---- signing, part 1: the binaries that end up inside the install ----
+      # SignPath's trusted-build integration requires the artifact to be a
+      # GitHub Actions artifact, and it takes the origin metadata from GitHub.
+      - name: Upload unsigned binaries
+        id: upload-binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-binaries
+          path: dist/win-unpacked/*.exe
+          if-no-files-found: error
 
-      - name: Build installer and portable zip
+      - name: Sign unpacked binaries
+        if: steps.signing.outputs.configured == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
+          github-artifact-id: ${{ steps.upload-binaries.outputs.artifact-id }}
+          wait-for-completion: 'true'
+          output-artifact-directory: dist/win-unpacked
+
+      - name: Build installer and portable zip from the signed directory
         run: npx electron-builder --win nsis zip --prepackaged dist/win-unpacked
 
-      - name: Sign installer
-        shell: pwsh
-        run: pwsh -NoProfile -File scripts/sign.ps1 -Path 'dist/*.exe'
+      # ---- signing, part 2: the installer the user actually downloads ----
+      - name: Upload unsigned installer
+        id: upload-installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installer
+          path: dist/*.exe
+          if-no-files-found: error
 
-      - name: Verify installer signature
+      - name: Sign installer
+        if: steps.signing.outputs.configured == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
+          github-artifact-id: ${{ steps.upload-installer.outputs.artifact-id }}
+          wait-for-completion: 'true'
+          output-artifact-directory: dist
+
+      - name: Verify signatures
+        if: steps.signing.outputs.configured == 'true'
         shell: pwsh
         run: |
-          if (-not $env:SIGNPATH_API_TOKEN) { 'SignPath not configured - unsigned build'; exit 0 }
-          $installer = Get-ChildItem 'dist/*.exe' | Select-Object -First 1
-          $signature = Get-AuthenticodeSignature -LiteralPath $installer.FullName
-          if ($signature.Status -ne 'Valid') { throw "invalid signature: $($signature.Status)" }
-          "signature OK: $($signature.SignerCertificate.Subject)"
+          $failures = @()
+          foreach ($artifact in @(Get-ChildItem 'dist/*.exe') + @(Get-ChildItem 'dist/win-unpacked/*.exe')) {
+            $signature = Get-AuthenticodeSignature -LiteralPath $artifact.FullName
+            if ($signature.Status -ne 'Valid') {
+              $failures += "$($artifact.Name): $($signature.Status)"
+            } else {
+              "OK $($artifact.Name) -> $($signature.SignerCertificate.Subject)"
+            }
+          }
+          if ($failures.Count -gt 0) { throw "unsigned artifacts: $($failures -join ', ')" }
+
+      - name: Refuse an unsigned release unless it was requested
+        if: steps.signing.outputs.configured != 'true'
+        shell: pwsh
+        env:
+          ALLOW_UNSIGNED_RELEASE: ${{ vars.ALLOW_UNSIGNED_RELEASE }}
+        run: |
+          if ($env:ALLOW_UNSIGNED_RELEASE -ne 'true') {
+            throw 'SignPath is not configured and ALLOW_UNSIGNED_RELEASE is not true. See docs/signing.md.'
+          }
+          'WARNING: publishing unsigned artifacts (Windows will show Unknown publisher).'
 
       - name: List release artifacts
         run: Get-ChildItem dist -File | Select-Object Name, Length
 
-      # ---- publish ----
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
