@@ -76,23 +76,24 @@ jobs:
         run: npx electron-builder --win dir
 
       # ---- signing (SignPath, free for open source) ----
+      # No step-level `if:` on secrets (GitHub rejects it and invalidates the
+      # whole workflow file). scripts/sign.ps1 is strict whenever SignPath is
+      # configured and warns + ships unsigned when it is not.
       - name: Sign unpacked binaries
-        if: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/sign.ps1 -Path 'dist/win-unpacked/*.exe' -Required
+        run: pwsh -NoProfile -File scripts/sign.ps1 -Path 'dist/win-unpacked/*.exe'
 
       - name: Build installer and portable zip
         run: npx electron-builder --win nsis zip --prepackaged dist/win-unpacked
 
       - name: Sign installer
-        if: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/sign.ps1 -Path 'dist/*.exe' -Required
+        run: pwsh -NoProfile -File scripts/sign.ps1 -Path 'dist/*.exe'
 
       - name: Verify installer signature
-        if: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
         shell: pwsh
         run: |
+          if (-not $env:SIGNPATH_API_TOKEN) { 'SignPath not configured - unsigned build'; exit 0 }
           $installer = Get-ChildItem 'dist/*.exe' | Select-Object -First 1
           $signature = Get-AuthenticodeSignature -LiteralPath $installer.FullName
           if ($signature.Status -ne 'Valid') { throw "invalid signature: $($signature.Status)" }
