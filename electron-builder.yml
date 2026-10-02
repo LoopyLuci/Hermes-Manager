@@ -14,6 +14,11 @@ extraResources:
   - from: build/icon.png
     to: build/icon.png
 asar: true
+publish:
+  provider: github
+  owner: LoopyLuci
+  repo: Hermes-Manager
+  releaseType: release
 win:
   icon: build/icon.ico
   target:

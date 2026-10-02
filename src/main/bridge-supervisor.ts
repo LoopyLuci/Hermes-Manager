@@ -282,7 +282,10 @@ export class BridgeSupervisor extends EventEmitter {
     if (this.stopping) return
     this.restartAttempts += 1
     if (this.restartAttempts > 3) {
-      this.emit('log', `bridge restart budget exhausted (${this.restartAttempts} attempts); giving up`)
+      this.emit(
+        'log',
+        `bridge restart budget exhausted (${this.restartAttempts} attempts); giving up`,
+      )
       return
     }
     this.restartTimer = setTimeout(

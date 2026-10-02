@@ -23,8 +23,9 @@ export function FirstRunWizard({
     const dialog = dialogRef.current
     if (!dialog) return
     const focusables = (): HTMLElement[] =>
-      Array.from(dialog.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href]'))
-        .filter((element) => !element.hasAttribute('disabled'))
+      Array.from(
+        dialog.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href]'),
+      ).filter((element) => !element.hasAttribute('disabled'))
     focusables()[0]?.focus()
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {

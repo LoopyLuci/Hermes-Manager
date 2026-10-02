@@ -1250,3 +1250,10 @@ textarea.field-input {
     align-items: stretch;
   }
 }
+.update-notes {
+  margin: 8px 0 0;
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 12px;
+}

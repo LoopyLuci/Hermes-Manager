@@ -1,15 +1,18 @@
-import { app, BrowserWindow, ipcMain, screen, Notification, type IpcMainInvokeEvent } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  screen,
+  Notification,
+  type IpcMainInvokeEvent,
+} from 'electron'
 import { join } from 'node:path'
 import { BridgeSupervisor } from './bridge-supervisor'
 import { installSecurityPolicy, openExternal } from './security'
-import {
-  pickHermesHome,
-  readSettings,
-  sanitizeSettingsPatch,
-  updateSettings,
-} from './settings'
+import { pickHermesHome, readSettings, sanitizeSettingsPatch, updateSettings } from './settings'
 import { detectHermesHome } from './hermes-paths'
 import { createTray, destroyTray, isQuitting, markQuitting } from './tray'
+import { checkForAppUpdate, initAppUpdater, installAppUpdate } from './app-updater'
 
 const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
 
@@ -150,6 +153,14 @@ function registerIpc(): void {
     await bridge.stop()
     return bridge.start()
   })
+  ipcMain.handle('app:check-update', (event) => {
+    assertTrustedSender(event)
+    return checkForAppUpdate()
+  })
+  ipcMain.handle('app:install-update', (event) => {
+    assertTrustedSender(event)
+    return installAppUpdate()
+  })
 }
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock()
@@ -168,6 +179,7 @@ if (!gotSingleInstanceLock) {
   app.whenReady().then(async () => {
     app.setAppUserModelId('com.hermes.manager')
     installSecurityPolicy()
+    initAppUpdater({ onLog: (line: string) => mainWindow?.webContents.send('bridge:log', line) })
     bridge = new BridgeSupervisor(app.getPath('userData'))
     bridge.on('log', (line: string) => mainWindow?.webContents.send('bridge:log', line))
     bridge.on('error', (error: Error) => {

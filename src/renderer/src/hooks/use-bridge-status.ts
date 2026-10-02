@@ -25,10 +25,7 @@ export function useBridgeStatus(): BridgeStatusState {
         const next = await window.hermes?.bridgeState?.()
         if (disposed) return
         setState(next ?? null)
-        timerRef.current = setTimeout(
-          () => void poll(),
-          next?.status === 'ready' ? 10_000 : 2_000,
-        )
+        timerRef.current = setTimeout(() => void poll(), next?.status === 'ready' ? 10_000 : 2_000)
       } catch {
         if (disposed) return
         timerRef.current = setTimeout(() => void poll(), 5_000)

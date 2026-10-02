@@ -1,4 +1,5 @@
 import type {
+  AppUpdateCheck,
   BackupCreateResult,
   BackupDeleteResult,
   BackupReport,
@@ -123,6 +124,9 @@ export const bridgeApi = {
       method: 'POST',
       body: JSON.stringify({ branch: branch || null, yes: true }),
     }),
+  /** Manager (not Hermes) updates are served by the main process, not the bridge. */
+  checkAppUpdate: (): Promise<AppUpdateCheck> => window.hermes.checkAppUpdate(),
+  installAppUpdate: (): Promise<boolean> => window.hermes.installAppUpdate(),
   backups: (): Promise<BackupReport> => request<BackupReport>('/backups'),
   createBackup: (mode: 'snapshot' | 'full'): Promise<BackupCreateResult> =>
     request<BackupCreateResult>('/backups/create', {

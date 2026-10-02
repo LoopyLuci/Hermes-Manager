@@ -50,6 +50,17 @@ export interface BridgeStateDto {
   health: HealthReport | null
 }
 
+/** Result of an application (Hermes Manager itself) update check. */
+export interface AppUpdateCheck {
+  ok: boolean
+  current: string
+  available: boolean
+  version: string | null
+  notes: string | null
+  downloaded: boolean
+  reason: string | null
+}
+
 export type StreamEvent =
   | { type: 'heartbeat'; at: string; uptime_s: number }
   | { type: 'layers'; layers: Record<SourceLayer, LayerStatus> }

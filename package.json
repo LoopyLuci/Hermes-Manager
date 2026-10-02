@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.13",
+    "electron-updater": "^6.8.9",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

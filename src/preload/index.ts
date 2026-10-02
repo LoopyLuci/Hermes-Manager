@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { BridgeInfo, BridgeStateDto } from '../shared/protocol'
+import type { AppUpdateCheck, BridgeInfo, BridgeStateDto } from '../shared/protocol'
 
-export type { BridgeStateDto } from '../shared/protocol'
+export type { AppUpdateCheck, BridgeStateDto } from '../shared/protocol'
 
 export interface SettingsDto {
   hermesHome?: string
@@ -20,6 +20,8 @@ const api = {
     ipcRenderer.invoke('hermes:write-settings', patch),
   detectHermesHome: (): Promise<string | null> => ipcRenderer.invoke('hermes:detect'),
   pickHermesHome: (): Promise<string | null> => ipcRenderer.invoke('hermes:pick'),
+  checkAppUpdate: (): Promise<AppUpdateCheck> => ipcRenderer.invoke('app:check-update'),
+  installAppUpdate: (): Promise<boolean> => ipcRenderer.invoke('app:install-update'),
   onBridgeLog: (listener: (line: string) => void): (() => void) => {
     const handler = (_event: Electron.IpcRendererEvent, line: string): void => listener(line)
     ipcRenderer.on('bridge:log', handler)

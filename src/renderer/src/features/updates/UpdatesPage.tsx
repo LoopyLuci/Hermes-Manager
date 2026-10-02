@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { UpdateCheckResult, UpdateReport } from '@shared/protocol'
+import type { AppUpdateCheck, UpdateCheckResult, UpdateReport } from '@shared/protocol'
 import { bridgeApi } from '../../lib/bridge-api'
 
 function shortSha(sha: string | null): string {
@@ -14,6 +14,8 @@ export function UpdatesPage(): React.JSX.Element {
   const [note, setNote] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [appUpdate, setAppUpdate] = useState<AppUpdateCheck | null>(null)
+  const [appBusy, setAppBusy] = useState(false)
   const aliveRef = useRef(true)
 
   const refresh = useCallback(async () => {
@@ -79,6 +81,52 @@ export function UpdatesPage(): React.JSX.Element {
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
       setBusy(false)
+    }
+  }
+
+  const checkApp = async (): Promise<void> => {
+    setAppBusy(true)
+    try {
+      const result = await bridgeApi.checkAppUpdate()
+      if (aliveRef.current) setAppUpdate(result)
+    } catch (cause) {
+      if (aliveRef.current)
+        setAppUpdate({
+          ok: false,
+          current: appUpdate?.current ?? 'unknown',
+          available: false,
+          version: null,
+          notes: null,
+          downloaded: false,
+          reason: cause instanceof Error ? cause.message : String(cause),
+        })
+    } finally {
+      if (aliveRef.current) setAppBusy(false)
+    }
+  }
+
+  const installApp = async (): Promise<void> => {
+    setAppBusy(true)
+    try {
+      const started = await bridgeApi.installAppUpdate()
+      if (aliveRef.current && !started) {
+        setAppUpdate((current) =>
+          current ? { ...current, ok: false, reason: 'could not start the installer' } : current,
+        )
+      }
+    } catch (cause) {
+      if (aliveRef.current)
+        setAppUpdate((current) =>
+          current
+            ? {
+                ...current,
+                ok: false,
+                reason: cause instanceof Error ? cause.message : String(cause),
+              }
+            : current,
+        )
+    } finally {
+      if (aliveRef.current) setAppBusy(false)
     }
   }
 
@@ -209,6 +257,46 @@ export function UpdatesPage(): React.JSX.Element {
           )}
         </div>
       ) : null}
+
+      <div className="panel" data-testid="app-update-panel">
+        <div className="panel-head">
+          <h2>Hermes Manager updates</h2>
+          <span className="panel-note">
+            {appUpdate
+              ? appUpdate.available
+                ? `v${appUpdate.version ?? '?'} available (installed ${appUpdate.current})`
+                : appUpdate.ok
+                  ? `installed version ${appUpdate.current}`
+                  : (appUpdate.reason ?? 'unavailable')
+              : 'not checked yet'}
+          </span>
+        </div>
+        <div className="toolbar-row">
+          <button
+            type="button"
+            className="button"
+            data-testid="app-check-update"
+            disabled={appBusy}
+            onClick={() => void checkApp()}
+          >
+            Check for app update
+          </button>
+          {appUpdate?.available ? (
+            <button
+              type="button"
+              className="button button-primary"
+              data-testid="app-install-update"
+              disabled={appBusy}
+              onClick={() => void installApp()}
+            >
+              {appUpdate.downloaded ? 'Restart and install' : 'Download and install'}
+            </button>
+          ) : null}
+        </div>
+        {appUpdate?.notes ? (
+          <pre className="panel-note mono update-notes">{appUpdate.notes}</pre>
+        ) : null}
+      </div>
 
       {report?.detail ? <div className="panel panel-muted">{report.detail}</div> : null}
 
