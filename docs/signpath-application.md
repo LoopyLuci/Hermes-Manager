@@ -6,23 +6,23 @@ artifacts. This document contains everything the application form asks for.
 
 ## Project
 
-| Field | Value |
-| --- | --- |
-| Project name | Hermes Manager |
-| Project slug | `hermes-manager` |
-| Repository URL | https://github.com/LoopyLuci/Hermes-Manager |
-| License | MIT (see `LICENSE` in the repository) |
-| Language | TypeScript, Python |
-| Description | Desktop control center for Hermes: live telemetry, log explorer, gateway and process control, session browser, streaming chat, comment-preserving config editor, updates, backups, and a tools center (MCP servers, skills, cron jobs, plugins, local models). Ships as a Windows installer and a portable zip. |
-| Download page / docs | https://github.com/LoopyLuci/Hermes-Manager#readme |
+| Field                | Value                                                                                                                                                                                                                                                                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project name         | Hermes Manager                                                                                                                                                                                                                                                                                                  |
+| Project slug         | `hermes-manager`                                                                                                                                                                                                                                                                                                |
+| Repository URL       | https://github.com/LoopyLuci/Hermes-Manager                                                                                                                                                                                                                                                                     |
+| License              | MIT (see `LICENSE` in the repository)                                                                                                                                                                                                                                                                           |
+| Language             | TypeScript, Python                                                                                                                                                                                                                                                                                              |
+| Description          | Desktop control center for Hermes: live telemetry, log explorer, gateway and process control, session browser, streaming chat, comment-preserving config editor, updates, backups, and a tools center (MCP servers, skills, cron jobs, plugins, local models). Ships as a Windows installer and a portable zip. |
+| Download page / docs | https://github.com/LoopyLuci/Hermes-Manager#readme                                                                                                                                                                                                                                                              |
 
 ## Maintainer roles
 
-| Role | Members |
-| --- | --- |
-| Committers and reviewers | Repository maintainers: https://github.com/orgs/LoopyLuci/teams/members |
-| Approvers | Repository owners: https://github.com/LoopyLuci?tab=repositories (role: owner) |
-| Code-signing responsible | Repository owner (same person as the committers) |
+| Role                     | Members                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| Committers and reviewers | Repository maintainers: https://github.com/orgs/LoopyLuci/teams/members        |
+| Approvers                | Repository owners: https://github.com/LoopyLuci?tab=repositories (role: owner) |
+| Code-signing responsible | Repository owner (same person as the committers)                               |
 
 ## Build and release process
 
