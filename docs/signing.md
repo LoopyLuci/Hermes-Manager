@@ -1,9 +1,29 @@
-# Code signing
+# Signing and verifying releases
 
-Hermes Manager releases are signed with [SignPath](https://signpath.io/). Free
-code signing for open-source projects is provided by SignPath.io with a
-certificate issued to the SignPath Foundation; every release is approved by a
-human in SignPath before the certificate is used.
+Hermes Manager carries **two independent signatures**. Both are automatic; they
+solve different problems.
+
+|                         | GitHub artifact attestation                                       | SignPath (Authenticode)                          |
+| ----------------------- | ----------------------------------------------------------------- | ------------------------------------------------ |
+| What is signed          | the SHA-256 of each released file                                 | the binary itself, with a Windows certificate    |
+| Signed by               | this workflow's Sigstore key, bound to the GitHub OIDC identity   | a certificate issued to the SignPath Foundation  |
+| Verifies                | "this exact file was built by this repository's release workflow" | "Windows trusts this publisher"                  |
+| Verify with             | `gh attestation verify <file> -R LoopyLuci/Hermes-Manager`        | `Get-AuthenticodeSignature <file>`               |
+| Cost / setup            | free, automatic, nothing to configure                             | free for OSS, needs an approved SignPath project |
+| Windows shows publisher | no (still "Unknown publisher")                                    | yes                                              |
+
+The attestation is attached to every release automatically. Authenticode needs
+the SignPath project described below.
+
+## Verifying a download
+
+```powershell
+# 1. provenance: was this file built by our release workflow?
+gh attestation verify .\HermesManager-0.1.0-x64.zip -R LoopyLuci/Hermes-Manager
+
+# 2. Windows publisher: did a trusted certificate sign it?
+Get-AuthenticodeSignature .\HermesManager-0.1.0-x64.exe | Select-Object Status, SignerCertificate
+```
 
 ## How a release gets signed
 
@@ -98,12 +118,3 @@ Flow: `POST /SigningRequests/SubmitWithArtifact` → poll
 `GET /SigningRequests/{id}/SignedArtifact` → validate with
 `Get-AuthenticodeSignature`. Requests submitted this way carry no origin
 verification, so use a `test-signing` policy; releases go through the workflow.
-
-## Verifying a download
-
-```powershell
-Get-AuthenticodeSignature .\HermesManager-0.1.0-x64.exe | Select-Object Status, SignerCertificate
-```
-
-`Status` must be `Valid`. Windows will then show the publisher instead of
-"Unknown publisher".

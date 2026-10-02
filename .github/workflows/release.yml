@@ -16,6 +16,10 @@ concurrency:
 permissions:
   actions: read
   contents: write
+  # Sigstore-backed build provenance: the attestation is signed with this
+  # workflow's OIDC identity, so every release proves where it came from.
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -155,6 +159,13 @@ jobs:
             }
           }
           if ($failures.Count -gt 0) { throw "unsigned artifacts: $($failures -join ', ')" }
+
+      - name: Attest build provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/*.exe
+            dist/*.zip
 
       - name: Refuse an unsigned release unless it was requested
         if: steps.signing.outputs.configured != 'true'
