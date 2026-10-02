@@ -98,8 +98,17 @@ def read_from(path: Path, offset: int, seq_start: int, limit: int = 500) -> tupl
         chunk = handle.read(512 * 1024)
     text = _decode(chunk)
     parts = text.splitlines(keepends=True)
-    complete = [part.rstrip("\r\n") for part in parts[:-1]] if len(parts) > 1 else []
-    consumed = len(text) if not parts or text.endswith(("\n", "\r")) else len(text) - len(parts[-1])
+    if not parts:
+        complete: list[str] = []
+        consumed = 0
+    elif text.endswith(("\n", "\r")):
+        # Every line in the chunk is terminated, including the last one.
+        complete = [part.rstrip("\r\n") for part in parts]
+        consumed = len(text)
+    else:
+        # The final line may still be growing; leave it for the next read.
+        complete = [part.rstrip("\r\n") for part in parts[:-1]]
+        consumed = len(text) - len(parts[-1])
     truncated = len(complete) > limit
     if truncated:
         complete = complete[-limit:]

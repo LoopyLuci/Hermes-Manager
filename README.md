@@ -64,11 +64,12 @@ npm run dev          # electron-vite dev with HMR; bridge auto-starts
 ### Quality gates
 
 ```powershell
-npm run lint           # ESLint
-npm run format:check   # Prettier
-npm run typecheck      # tsc for the main, renderer and e2e configs
-npm run verify         # typecheck + bridge (pytest) + renderer (vitest)
-npm run test:e2e       # Playwright Electron journeys (run `npm run build` first)
+npm run lint         # ESLint + Prettier check
+npm run typecheck    # tsc for node + web configs (src and tests)
+npm run verify       # typecheck + lint + bridge (pytest) + renderer (vitest)
+npm run verify:full  # verify + build + e2e (Playwright journeys)
+npm run test:e2e     # Playwright Electron journeys (run `npm run build` first)
+npm run sign         # SignPath REST signing of dist/*.exe (needs SIGNPATH_* env)
 ```
 
 ### The local CI/CD pipeline
@@ -119,17 +120,31 @@ The local pipeline (above) runs all three, plus lint, typecheck, a production bu
 ## Releasing
 
 1. Bump `version` in `package.json`.
-2. Tag and push: `git tag v0.2.0 && git push origin v0.2.0`.
-3. The **Release** workflow builds on Windows, signs with
-   [SignPath](https://signpath.org/) (free for open-source), runs the test suite, and
-   publishes a GitHub Release containing the installer, portable zip, and `latest.yml`
-   consumed by the in-app updater.
+2. Commit, then tag and push: `git tag v0.2.0 && git push origin v0.2.0`.
+3. The **Release** workflow (`.github/workflows/release.yml`) runs on the tag:
+   lint → format → typecheck → pytest → vitest → build → Playwright e2e →
+   `electron-builder --win dir` → sign every unpacked binary with
+   [SignPath](https://signpath.io/) (free for open source) → package the
+   installer/zip from the **prepackaged** (already signed) directory → sign the
+   installer → validate its Authenticode status → publish a GitHub Release with
+   the installer, portable zip, `latest.yml` and blockmaps.
 
-Repository secrets used by the release workflow:
+`latest.yml` is what the in-app updater (electron-updater, GitHub provider)
+polls, so a release is installable from the Updates page with one click.
 
-| Secret               | Purpose                                                           |
-| -------------------- | ----------------------------------------------------------------- |
-| `SIGNPATH_API_TOKEN` | SignPath API token (org/project ids configurable in the workflow) |
+Repository secrets/variables used by the release workflow:
+
+| Name                            | Kind     | Purpose                                    |
+| ------------------------------- | -------- | ------------------------------------------ |
+| `SIGNPATH_API_TOKEN`            | secret   | SignPath API token (submitter permissions) |
+| `SIGNPATH_ORGANIZATION_ID`      | variable | SignPath organization id                   |
+| `SIGNPATH_PROJECT_SLUG`         | variable | SignPath project slug                      |
+| `SIGNPATH_SIGNING_POLICY_SLUG`  | variable | Signing policy slug (release policy)       |
+| `SIGNPATH_ARTIFACT_CONFIG_SLUG` | variable | Optional artifact configuration            |
+
+Without `SIGNPATH_API_TOKEN` the signing steps are skipped and the workflow
+publishes **unsigned** artifacts with an explicit warning; once the secret
+exists the same workflow signs everything and hard-fails on a bad signature.
 
 ## Driving it from other programs
 

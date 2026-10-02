@@ -1,6 +1,8 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '@renderer/App'
+import { setConfigDirty } from '@renderer/lib/unsaved-guard'
 import type {
   BackupCreateResult,
   BackupReport,
@@ -1006,5 +1008,261 @@ describe('App shell', () => {
     )
     expect(screen.getByTestId('models-ollama')).toBeTruthy()
     expect(screen.getByTestId('models-ollama').textContent).toContain('not responding')
+  })
+})
+
+describe('first-run wizard', () => {
+  let homeMissingListener: (() => void) | null = null
+
+  function installBridge(overrides: Record<string, unknown> = {}): void {
+    homeMissingListener = null
+    ;(window as unknown as { hermes: unknown }).hermes = {
+      bridgeInfo: async () => bridgeInfo,
+      bridgeState: async () => ({ status: 'ready', info: bridgeInfo, lastError: null }),
+      startBridge: async () => bridgeInfo,
+      restartBridge: async () => bridgeInfo,
+      openExternal: async () => undefined,
+      readSettings: async () => ({}),
+      writeSettings: async () => ({}),
+      detectHermesHome: async () => null,
+      pickHermesHome: async () => null,
+      checkAppUpdate: async () => ({
+        ok: false,
+        current: '0.1.0',
+        available: false,
+        version: null,
+        notes: null,
+        downloaded: false,
+        reason: 'updates apply to installed builds only',
+      }),
+      installAppUpdate: async () => false,
+      onBridgeLog: () => () => undefined,
+      onHermesHomeMissing: (listener: () => void) => {
+        homeMissingListener = listener
+        return () => {
+          homeMissingListener = null
+        }
+      },
+      ...overrides,
+    }
+  }
+
+  beforeEach(() => {
+    installBridge()
+    mockFetchByPath()
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    vi.restoreAllMocks()
+  })
+
+  it('opens when the bridge reports a missing Hermes install', async () => {
+    render(<App />)
+    expect(screen.queryByTestId('bridge-banner')).toBeNull()
+
+    act(() => homeMissingListener?.())
+    expect(await screen.findByLabelText('Locate Hermes')).toBeTruthy()
+    expect(screen.getByText('Auto-detection')).toBeTruthy()
+  })
+
+  it('surfaces a cancelled folder picker without an error and applies a valid pick', async () => {
+    installBridge({ detectHermesHome: async () => 'C:/hermes' })
+    render(<App />)
+    act(() => homeMissingListener?.())
+
+    const dialog = await screen.findByLabelText('Locate Hermes')
+    expect(within(dialog).getByText('C:/hermes')).toBeTruthy()
+
+    // Cancelling the native dialog must not look like an invalid folder.
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Browse…' }))
+    await waitFor(() => expect(screen.queryByLabelText('Locate Hermes')).toBeTruthy())
+    expect(screen.queryByText(/does not contain a hermes-agent/)).toBeNull()
+
+    const writeSettings = vi.fn(async () => ({}))
+    const restartBridge = vi.fn(async () => bridgeInfo)
+    installBridge({
+      detectHermesHome: async () => 'C:/hermes',
+      pickHermesHome: async () => 'C:/hermes',
+      writeSettings,
+      restartBridge,
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Browse…' }))
+    await waitFor(() => expect(restartBridge).toHaveBeenCalled())
+    expect(writeSettings).toHaveBeenCalledWith({ hermesHome: 'C:/hermes' })
+    await waitFor(() => expect(screen.queryByLabelText('Locate Hermes')).toBeNull())
+  })
+
+  it('reports a folder that is not a Hermes home', async () => {
+    installBridge({
+      pickHermesHome: async () => {
+        throw new Error('That folder does not contain a hermes-agent checkout.')
+      },
+    })
+    render(<App />)
+    act(() => homeMissingListener?.())
+    const dialog = await screen.findByLabelText('Locate Hermes')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Browse…' }))
+    expect(await screen.findByText(/does not contain a hermes-agent/)).toBeTruthy()
+  })
+
+  it('can be dismissed and re-opened from the bridge banner', async () => {
+    installBridge({
+      bridgeState: async () => ({
+        status: 'failed',
+        info: null,
+        lastError: 'bridge exited (code=1)',
+      }),
+    })
+    render(<App />)
+    act(() => homeMissingListener?.())
+    const dialog = await screen.findByLabelText('Locate Hermes')
+    // The banner is suppressed while the wizard owns the screen.
+    expect(screen.queryByTestId('bridge-banner')).toBeNull()
+
+    fireEvent.keyDown(dialog, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByLabelText('Locate Hermes')).toBeNull())
+
+    const banner = await screen.findByTestId('bridge-banner')
+    expect(banner.textContent).toContain('bridge exited')
+    fireEvent.click(screen.getByTestId('bridge-locate'))
+    expect(await screen.findByLabelText('Locate Hermes')).toBeTruthy()
+  })
+})
+
+describe('bridge failure banner', () => {
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    vi.restoreAllMocks()
+  })
+
+  it('offers retry and locate actions when the bridge is down', async () => {
+    const startBridge = vi.fn(async () => bridgeInfo)
+    ;(window as unknown as { hermes: unknown }).hermes = {
+      bridgeInfo: async () => null,
+      bridgeState: async () => ({
+        status: 'failed',
+        info: null,
+        lastError: 'bridge exited (code=1, signal=null)',
+      }),
+      startBridge,
+      restartBridge: async () => bridgeInfo,
+      openExternal: async () => undefined,
+      readSettings: async () => ({}),
+      writeSettings: async () => ({}),
+      detectHermesHome: async () => null,
+      pickHermesHome: async () => null,
+      checkAppUpdate: async () => ({
+        ok: false,
+        current: '0.1.0',
+        available: false,
+        version: null,
+        notes: null,
+        downloaded: false,
+        reason: 'n/a',
+      }),
+      installAppUpdate: async () => false,
+      onBridgeLog: () => () => undefined,
+      onHermesHomeMissing: () => () => undefined,
+    }
+    mockFetchByPath()
+    render(<App />)
+
+    const banner = await screen.findByTestId('bridge-banner')
+    expect(banner.textContent).toContain('bridge exited')
+    await userEvent.click(screen.getByTestId('bridge-retry'))
+    await waitFor(() => expect(startBridge).toHaveBeenCalled())
+  })
+})
+
+describe('config unsaved-change guard', () => {
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    vi.restoreAllMocks()
+    setConfigDirty(false)
+  })
+
+  it('asks before discarding edits when navigating away', async () => {
+    ;(window as unknown as { hermes: unknown }).hermes = {
+      bridgeInfo: async () => bridgeInfo,
+      bridgeState: async () => ({ status: 'ready', info: bridgeInfo, lastError: null }),
+      startBridge: async () => bridgeInfo,
+      restartBridge: async () => bridgeInfo,
+      openExternal: async () => undefined,
+      readSettings: async () => ({}),
+      writeSettings: async () => ({}),
+      detectHermesHome: async () => null,
+      pickHermesHome: async () => null,
+      checkAppUpdate: async () => ({
+        ok: false,
+        current: '0.1.0',
+        available: false,
+        version: null,
+        notes: null,
+        downloaded: false,
+        reason: 'n/a',
+      }),
+      installAppUpdate: async () => false,
+      onBridgeLog: () => () => undefined,
+      onHermesHomeMissing: () => () => undefined,
+    }
+    mockFetchByPath()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<App />)
+
+    fireEvent.click(screen.getByTestId('nav-config'))
+    const field = await screen.findByTestId('field-model')
+    fireEvent.change(field, { target: { value: 'openrouter/changed' } })
+    await waitFor(() =>
+      expect(screen.getByTestId('change-count').textContent).toContain('1 pending'),
+    )
+
+    fireEvent.click(screen.getByTestId('nav-logs'))
+    await waitFor(() => expect(confirmSpy).toHaveBeenCalled())
+    expect(screen.getByTestId('nav-logs').getAttribute('aria-current')).toBeNull()
+
+    confirmSpy.mockReturnValue(true)
+    fireEvent.click(screen.getByTestId('nav-logs'))
+    await waitFor(() =>
+      expect(screen.getByTestId('nav-logs').getAttribute('aria-current')).toBe('page'),
+    )
+  })
+
+  it('invalidates a stale diff when edits change after review', async () => {
+    ;(window as unknown as { hermes: unknown }).hermes = {
+      bridgeInfo: async () => bridgeInfo,
+      bridgeState: async () => ({ status: 'ready', info: bridgeInfo, lastError: null }),
+      startBridge: async () => bridgeInfo,
+      restartBridge: async () => bridgeInfo,
+      openExternal: async () => undefined,
+      readSettings: async () => ({}),
+      writeSettings: async () => ({}),
+      detectHermesHome: async () => null,
+      pickHermesHome: async () => null,
+      checkAppUpdate: async () => ({
+        ok: false,
+        current: '0.1.0',
+        available: false,
+        version: null,
+        notes: null,
+        downloaded: false,
+        reason: 'n/a',
+      }),
+      installAppUpdate: async () => false,
+      onBridgeLog: () => () => undefined,
+      onHermesHomeMissing: () => () => undefined,
+    }
+    mockFetchByPath()
+    render(<App />)
+
+    fireEvent.click(screen.getByTestId('nav-config'))
+    const field = await screen.findByTestId('field-model')
+    fireEvent.change(field, { target: { value: 'openrouter/first' } })
+    await userEvent.click(screen.getByTestId('review-changes'))
+    expect(await screen.findByTestId('diff-panel')).toBeTruthy()
+
+    fireEvent.change(field, { target: { value: 'openrouter/second' } })
+    await waitFor(() => expect(screen.queryByTestId('diff-panel')).toBeNull())
+    expect(screen.getByTestId('config-error').textContent).toContain('review again')
   })
 })

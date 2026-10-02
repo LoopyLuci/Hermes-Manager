@@ -75,7 +75,7 @@ export function ConfigPage(): React.JSX.Element {
   const [envDeletes, setEnvDeletes] = useState<Set<string>>(new Set())
   const [diff, setDiff] = useState<ConfigDiff | null>(null)
   const [pendingBody, setPendingBody] = useState<ConfigEditRequest | null>(null)
-  const [reviewedCount, setReviewedCount] = useState<number | null>(null)
+  const [reviewedSignature, setReviewedSignature] = useState<string | null>(null)
   const [result, setResult] = useState<ConfigApplyResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -165,15 +165,28 @@ export function ConfigPage(): React.JSX.Element {
   }, [changeCount])
 
   // Edits made after "Review" would be silently skipped by Apply (it sends the
-  // reviewed snapshot); invalidate so the user must re-review.
+  // reviewed snapshot); invalidate so the user must re-review. The signature
+  // (not the change count) is compared: editing the same key twice keeps the
+  // count identical while still changing what would be applied.
+  const draftSignature = useMemo(
+    () =>
+      JSON.stringify([
+        Object.entries(drafts).sort(),
+        [...deletes].sort(),
+        Object.entries(envDrafts).sort(),
+        [...envDeletes].sort(),
+      ]),
+    [drafts, deletes, envDrafts, envDeletes],
+  )
+
   useEffect(() => {
-    if (diff && reviewedCount !== null && changeCount !== reviewedCount) {
+    if (diff && reviewedSignature !== null && draftSignature !== reviewedSignature) {
       setDiff(null)
       setPendingBody(null)
-      setReviewedCount(null)
+      setReviewedSignature(null)
       setError('Edits changed after review — review again before applying.')
     }
-  }, [changeCount, diff, reviewedCount])
+  }, [draftSignature, diff, reviewedSignature])
 
   useEffect(() => () => setConfigDirty(false), [])
 
@@ -275,7 +288,7 @@ export function ConfigPage(): React.JSX.Element {
       const preview: ConfigDiff = await bridgeApi.configDiff(body)
       if (!aliveRef.current) return
       setPendingBody(body)
-      setReviewedCount(changeCount)
+      setReviewedSignature(draftSignature)
       setDiff(preview)
     } catch (cause) {
       if (!aliveRef.current) return
@@ -311,7 +324,7 @@ export function ConfigPage(): React.JSX.Element {
   const cancelDiff = (): void => {
     setDiff(null)
     setPendingBody(null)
-    setReviewedCount(null)
+    setReviewedSignature(null)
   }
 
   const reloadWithGuard = (): void => {
@@ -322,7 +335,7 @@ export function ConfigPage(): React.JSX.Element {
     setEnvDeletes(new Set())
     setDiff(null)
     setPendingBody(null)
-    setReviewedCount(null)
+    setReviewedSignature(null)
     void reload()
   }
 

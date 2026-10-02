@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, typecheck, tests, build
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install node dependencies
+        run: npm ci
+
+      - name: Install bridge runtime dependencies
+        run: python -m pip install --disable-pip-version-check fastapi uvicorn pydantic PyYAML
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Formatting
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Bridge tests (pytest)
+        run: pwsh -NoProfile -File scripts/verify.ps1 -BridgeOnly
+
+      - name: Renderer tests (vitest)
+        run: npm run test:renderer
+
+      - name: Production build
+        run: npm run build
+
+      - name: Resolve bridge python for e2e
+        shell: pwsh
+        run: 'echo "HM_BRIDGE_PYTHON=$((Get-Command python).Source)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append'
+
+      - name: End-to-end tests (Playwright)
+        run: npx playwright test
+        env:
+          HM_E2E: '1'
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore

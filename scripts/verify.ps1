@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [switch] $BridgeOnly,
-    [switch] $RendererOnly
+    [switch] $RendererOnly,
+    [switch] $E2E,
+    [switch] $SkipLint
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,9 +29,27 @@ if (-not $BridgeOnly) {
     npm run typecheck --silent
     if ($LASTEXITCODE -ne 0) { $failures += 'typecheck' }
 
+    if (-not $SkipLint) {
+        Write-Host '== lint ==' -ForegroundColor Cyan
+        npm run lint --silent
+        if ($LASTEXITCODE -ne 0) { $failures += 'lint' }
+    }
+
     Write-Host '== renderer tests ==' -ForegroundColor Cyan
     npm run test:renderer --silent
     if ($LASTEXITCODE -ne 0) { $failures += 'renderer tests' }
+
+    if ($E2E) {
+        Write-Host '== build (e2e prerequisite) ==' -ForegroundColor Cyan
+        npm run build --silent
+        if ($LASTEXITCODE -ne 0) { $failures += 'build' }
+        else {
+            Write-Host '== e2e tests ==' -ForegroundColor Cyan
+            $env:HM_E2E = '1'
+            npm run test:e2e --silent
+            if ($LASTEXITCODE -ne 0) { $failures += 'e2e tests' }
+        }
+    }
 }
 
 if ($failures.Count -gt 0) {

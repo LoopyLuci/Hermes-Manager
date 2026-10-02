@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish (e.g. v0.1.0)
+        required: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Verify, package, sign and publish
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install node dependencies
+        run: npm ci
+
+      - name: Install bridge runtime dependencies
+        run: python -m pip install --disable-pip-version-check fastapi uvicorn pydantic PyYAML
+
+      # ---- quality gates: never ship a build that does not pass them ----
+      - name: Lint
+        run: npm run lint
+
+      - name: Formatting
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Bridge tests (pytest)
+        run: pwsh -NoProfile -File scripts/verify.ps1 -BridgeOnly
+
+      - name: Renderer tests (vitest)
+        run: npm run test:renderer
+
+      - name: Production build
+        run: npm run build
+
+      - name: Resolve bridge python for e2e
+        shell: pwsh
+        run: 'echo "HM_BRIDGE_PYTHON=$((Get-Command python).Source)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append'
+
+      - name: End-to-end tests (Playwright)
+        run: npx playwright test
+        env:
+          HM_E2E: '1'
+
+      # ---- packaging ----
+      - name: Package unpacked directory
+        run: npx electron-builder --win dir
+
+      # ---- signing (SignPath, free for open source) ----
+      - name: Sign unpacked binaries
+        if: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/sign.ps1 -Path 'dist/win-unpacked/*.exe' -Required
+
+      - name: Build installer and portable zip
+        run: npx electron-builder --win nsis zip --prepackaged dist/win-unpacked
+
+      - name: Sign installer
+        if: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/sign.ps1 -Path 'dist/*.exe' -Required
+
+      - name: Verify installer signature
+        if: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem 'dist/*.exe' | Select-Object -First 1
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer.FullName
+          if ($signature.Status -ne 'Valid') { throw "invalid signature: $($signature.Status)" }
+          "signature OK: $($signature.SignerCertificate.Subject)"
+
+      - name: List release artifacts
+        run: Get-ChildItem dist -File | Select-Object Name, Length
+
+      # ---- publish ----
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: Hermes Manager ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/*.exe
+            dist/*.zip
+            dist/*.blockmap
+            dist/latest.yml
+          fail_on_unmatched_files: false
