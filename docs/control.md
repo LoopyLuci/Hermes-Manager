@@ -29,28 +29,28 @@ the window. `PYTHONPATH` must include `src/bridge`.
 
 Every request needs `Authorization: Bearer <token>`. Without a configured token the bridge refuses everything.
 
-| Route | What it does |
-|---|---|
-| `GET /api/v1/operations` | Every operation with a readable id (`gateway.status`, `config.apply`, `backups.create`...), one argument schema, and whether it changes anything |
-| `POST /api/v1/call/<id>` | Run one, with its arguments as a JSON object |
-| `GET /api/v1/openapi.json` | The full API description (the public `/docs` and `/openapi.json` are switched off) |
-| `GET /api/v1/gui/status`, `/api/v1/gui/operations` | Whether the window is attached; the window's operations |
-| `POST /api/v1/gui/launch` | Open the window (the installed app, or this checkout's built app) and wait until it attaches |
-| `POST /api/v1/gui/<op>` | Drive the window (below) |
+| Route                                              | What it does                                                                                                                                     |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/v1/operations`                           | Every operation with a readable id (`gateway.status`, `config.apply`, `backups.create`...), one argument schema, and whether it changes anything |
+| `POST /api/v1/call/<id>`                           | Run one, with its arguments as a JSON object                                                                                                     |
+| `GET /api/v1/openapi.json`                         | The full API description (the public `/docs` and `/openapi.json` are switched off)                                                               |
+| `GET /api/v1/gui/status`, `/api/v1/gui/operations` | Whether the window is attached; the window's operations                                                                                          |
+| `POST /api/v1/gui/launch`                          | Open the window (the installed app, or this checkout's built app) and wait until it attaches                                                     |
+| `POST /api/v1/gui/<op>`                            | Drive the window (below)                                                                                                                         |
 
 ## Driving the window
 
 The window's main process attaches to the bridge and runs these against the real page:
 
-| Operation | What it does |
-|---|---|
-| `state`, `window` | Visible, focused, size, current section; show, hide, focus, minimize, maximize, restore, resize |
-| `sections`, `open` | The sidebar sections; switch to one |
-| `inspect`, `find` | Every button, field, select, checkbox, tab, link, heading and table on screen, with ids, text, values, options; searching them |
-| `read`, `text` | One element's contents (a table's rows); all the text on screen |
-| `click`, `fill`, `select`, `check`, `key` | Act on an element |
-| `wait` | Until an element exists or some text appears |
-| `screenshot` | A PNG of the window |
+| Operation                                 | What it does                                                                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `state`, `window`                         | Visible, focused, size, current section; show, hide, focus, minimize, maximize, restore, resize                                |
+| `sections`, `open`                        | The sidebar sections; switch to one                                                                                            |
+| `inspect`, `find`                         | Every button, field, select, checkbox, tab, link, heading and table on screen, with ids, text, values, options; searching them |
+| `read`, `text`                            | One element's contents (a table's rows); all the text on screen                                                                |
+| `click`, `fill`, `select`, `check`, `key` | Act on an element                                                                                                              |
+| `wait`                                    | Until an element exists or some text appears                                                                                   |
+| `screenshot`                              | A PNG of the window                                                                                                            |
 
 An element is named by `{"id": ...}` (its `data-testid`, or the id `inspect` gave it) or by `{"text": ...}` (its visible
 text, label or placeholder), optionally narrowed by `{"role": "button"}`.
@@ -58,10 +58,15 @@ text, label or placeholder), optionally narrowed by `{"role": "button"}`.
 ## MCP
 
 ```json
-{"mcpServers": {"hermes-manager": {
-  "command": "C:/Users/<you>/AppData/Local/hermes/installs/<id>/environments/<id>/venv/Scripts/python.exe",
-  "args": ["-m", "hermes_manager_bridge.mcp"],
-  "env": {"PYTHONPATH": "Z:/Projects/Hermes-Manager/src/bridge"}}}}
+{
+  "mcpServers": {
+    "hermes-manager": {
+      "command": "C:/Users/<you>/AppData/Local/hermes/installs/<id>/environments/<id>/venv/Scripts/python.exe",
+      "args": ["-m", "hermes_manager_bridge.mcp"],
+      "env": { "PYTHONPATH": "Z:/Projects/Hermes-Manager/src/bridge" }
+    }
+  }
+}
 ```
 
 Every operation and every window operation is a tool (`gateway_status`, `config_apply`, `gui_open`, `gui_click`...),

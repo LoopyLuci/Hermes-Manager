@@ -81,24 +81,40 @@ test('can be driven from outside through the bridge', async () => {
   // What the MCP server and ABP do: find the bridge from its discovery file and call the window's operations.
   const { readFileSync } = await import('node:fs')
   const { homedir } = await import('node:os')
-  const record = JSON.parse(
-    readFileSync(
-      join(process.env.HM_HOME ?? join(homedir(), '.hermes-manager'), 'control.json'),
-      'utf8',
-    ),
-  ) as { url: string; token: string }
+  const discoveryPath = join(
+    process.env.HM_HOME ?? join(homedir(), '.hermes-manager'),
+    'control.json',
+  )
   const call = async (
     op: string,
     args: Record<string, unknown> = {},
   ): Promise<Record<string, unknown>> => {
-    for (let i = 0; i < 20; i++) {
-      const r = await fetch(`${record.url}/api/v1/gui/${op}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${record.token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(args),
-      })
-      if (r.status !== 409) return (await r.json()) as Record<string, unknown>
-      await new Promise((resolve) => setTimeout(resolve, 500)) // the window is still attaching
+    // Re-read the discovery file every attempt: the app writes it when its
+    // bridge is ready, which can be after this test starts, and a stale
+    // record points at a port nobody is listening on.
+    for (let i = 0; i < 40; i++) {
+      let record: { url: string; token: string } | null
+      try {
+        record = JSON.parse(readFileSync(discoveryPath, 'utf8'))
+      } catch {
+        record = null
+      }
+      if (record) {
+        try {
+          const r = await fetch(`${record.url}/api/v1/gui/${op}`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${record.token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(args),
+          })
+          if (r.status !== 409) return (await r.json()) as Record<string, unknown>
+        } catch {
+          // bridge not reachable yet; fall through and retry
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500))
     }
     throw new Error('the window never attached')
   }

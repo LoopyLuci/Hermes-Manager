@@ -75,8 +75,8 @@ def test_bridge_without_configured_token_fails_closed(runtime) -> None:
     from hermes_manager_bridge.server import create_app
 
     with TestClient(create_app(runtime=runtime, token=None)) as anonymous:
-        assert anonymous.get("/api/v1/health").status_code == 503
-        assert anonymous.get("/api/v1/config").status_code == 503
+        assert anonymous.get("/api/v1/health").status_code == 401
+        assert anonymous.get("/api/v1/config").status_code == 401
 
 
 def test_token_is_accepted_from_the_x_hermes_token_header(client) -> None:
@@ -97,19 +97,13 @@ def test_token_comparison_never_raises_on_unicode() -> None:
     assert _bearer_value(None) is None
 
 
-def test_docs_are_disabled_unless_explicitly_enabled(client) -> None:
+def test_docs_are_disabled_but_openapi_is_behind_the_token(client) -> None:
     assert client.get("/docs").status_code == 404
+    assert client.get("/redoc").status_code == 404
     assert client.get("/openapi.json").status_code == 404
-
-
-def test_interactive_docs_can_be_enabled(monkeypatch, runtime) -> None:
-    from fastapi.testclient import TestClient
-
-    from hermes_manager_bridge.server import create_app
-
-    monkeypatch.setenv("HERMES_BRIDGE_DOCS", "1")
-    with TestClient(create_app(runtime=runtime, token=TOKEN), headers=AUTH) as documented:
-        assert documented.get("/docs").status_code == 200
+    # The spec itself is only reachable through the authenticated route.
+    assert client.get("/api/v1/openapi.json").status_code == 401
+    assert client.get("/api/v1/openapi.json", headers=AUTH).status_code == 200
 
 
 def test_unhandled_errors_do_not_leak_internals(runtime) -> None:

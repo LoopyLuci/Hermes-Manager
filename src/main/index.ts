@@ -8,6 +8,7 @@ import {
 } from 'electron'
 import { join } from 'node:path'
 import { BridgeSupervisor } from './bridge-supervisor'
+import { Automation } from './automation'
 import { installSecurityPolicy, openExternal } from './security'
 import { pickHermesHome, readSettings, sanitizeSettingsPatch, updateSettings } from './settings'
 import { detectHermesHome } from './hermes-paths'
@@ -18,6 +19,7 @@ const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
 
 let mainWindow: BrowserWindow | null = null
 let bridge: BridgeSupervisor | null = null
+let automation: Automation | null = null
 let rendererCrashCount = 0
 let lastBridgeNotifyAt = 0
 let bridgeEverFailed = false
@@ -181,6 +183,12 @@ if (!gotSingleInstanceLock) {
     installSecurityPolicy()
     initAppUpdater({ onLog: (line: string) => mainWindow?.webContents.send('bridge:log', line) })
     bridge = new BridgeSupervisor(app.getPath('userData'))
+    // Remote control (MCP server, ABP, scripts): attach to every bridge this app gets, including after a restart.
+    automation = new Automation(
+      () => mainWindow,
+      () => bridge?.getState() ?? null,
+    )
+    bridge.on('ready', (info) => automation?.attach(info))
     bridge.on('log', (line: string) => mainWindow?.webContents.send('bridge:log', line))
     bridge.on('error', (error: Error) => {
       const message = error instanceof Error ? error.message : String(error)
@@ -242,6 +250,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', (event) => {
   markQuitting()
+  automation?.close()
   if (!bridge) return
   event.preventDefault()
   const instance = bridge

@@ -83,19 +83,20 @@ npm run pipeline:full   # every stage, including e2e and packaging
 node scripts/pipeline.mjs --fast | --list | --only tests | --package | --no-deploy
 ```
 
-| Stage | What it does |
-|---|---|
-| `preflight` | Node 22+, npm, free disk, git state, finds Hermes's Python for the bridge |
-| `deps` | `npm ci` only when `package-lock.json` changed since the last install |
-| `static` | ESLint, TypeScript, Prettier (reported), no secrets or files over 5 MB in the push, `npm audit` of production dependencies |
-| `tests` | Vitest and the bridge's pytest suite. A failed test is re-run once on its own: a flake is reported as a flake, and a real failure blocks. |
-| `build` | `electron-vite build`, with the output checked |
-| `smoke` | A real bridge in a throwaway `HM_HOME` must answer ping, refuse callers without the token, list its operations and run a read-only call. Its MCP server must answer `initialize` and `tools/list`. |
-| `e2e` | Playwright against the built Electron app |
-| `package` | `electron-builder`, with SHA-256 files beside the artifacts |
-| `deploy` | A bridge started by ABP or MCP from this checkout is restarted onto the new code. A running window is left alone and you are told to restart it. |
+| Stage       | What it does                                                                                                                                                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preflight` | Node 22+, npm, free disk, git state, finds Hermes's Python for the bridge                                                                                                                          |
+| `deps`      | `npm ci` only when `package-lock.json` changed since the last install                                                                                                                              |
+| `static`    | ESLint, TypeScript, Prettier (reported), no secrets or files over 5 MB in the push, `npm audit` of production dependencies                                                                         |
+| `tests`     | Vitest and the bridge's pytest suite. A failed test is re-run once on its own: a flake is reported as a flake, and a real failure blocks.                                                          |
+| `build`     | `electron-vite build`, with the output checked                                                                                                                                                     |
+| `smoke`     | A real bridge in a throwaway `HM_HOME` must answer ping, refuse callers without the token, list its operations and run a read-only call. Its MCP server must answer `initialize` and `tools/list`. |
+| `e2e`       | Playwright against the built Electron app                                                                                                                                                          |
+| `package`   | `electron-builder`, with SHA-256 files beside the artifacts                                                                                                                                        |
+| `deploy`    | A bridge started by ABP or MCP from this checkout is restarted onto the new code. A running window is left alone and you are told to restart it.                                                   |
 
 How it stays reliable:
+
 - only one run happens at a time; the lock left by a crashed run is taken over;
 - every command has a timeout, and on timeout its whole process tree is killed;
 - a stage that doesn't apply to the change is skipped, and says why; when the change set can't be determined, everything runs;

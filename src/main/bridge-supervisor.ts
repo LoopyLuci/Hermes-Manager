@@ -194,12 +194,6 @@ export class BridgeSupervisor extends EventEmitter {
 
     return this.waitForReady()
   }
-    })
-
-    // The restart budget resets only once the bridge has stayed up (see
-    // armStabilityReset), so a ready-then-crash loop still hits the cap.
-    return this.waitForReady()
-  }
 
   private handleLine(line: string): void {
     const trimmed = line.trim()

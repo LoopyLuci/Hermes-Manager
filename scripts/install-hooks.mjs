@@ -16,12 +16,17 @@ ROOT="$(git rev-parse --show-toplevel)"
 HM_PIPELINE_HOOK=1 exec node "$ROOT/scripts/pipeline.mjs"
 `
 const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim()
-const hooks = path.resolve(root, execFileSync('git', ['rev-parse', '--git-path', 'hooks'], { cwd: root, encoding: 'utf8' }).trim())
+const hooks = path.resolve(
+  root,
+  execFileSync('git', ['rev-parse', '--git-path', 'hooks'], { cwd: root, encoding: 'utf8' }).trim(),
+)
 const file = path.join(hooks, 'pre-push')
 
 if (process.argv.includes('--remove')) {
-  if (fs.existsSync(file) && fs.readFileSync(file, 'utf8').includes(MARK)) { fs.unlinkSync(file); console.log(`removed ${file}`) }
-  else console.log('no pipeline hook installed')
+  if (fs.existsSync(file) && fs.readFileSync(file, 'utf8').includes(MARK)) {
+    fs.unlinkSync(file)
+    console.log(`removed ${file}`)
+  } else console.log('no pipeline hook installed')
   process.exit(0)
 }
 if (fs.existsSync(file) && !fs.readFileSync(file, 'utf8').includes(MARK)) {
